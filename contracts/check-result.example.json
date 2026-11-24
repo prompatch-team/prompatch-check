@@ -1,0 +1,108 @@
+{
+  "version": "0.1-draft",
+  "summary": {
+    "kept": 1,
+    "missing": 4,
+    "hold": 3
+  },
+  "results": [
+    {
+      "condition_id": "c1",
+      "label": "필수 키워드 \"전포동 카페\" 5회 이상",
+      "status": "missing",
+      "expected": 5,
+      "actual": 3,
+      "unit": "회",
+      "note": "2회 더 필요해요",
+      "draft_spans": [
+        {
+          "start": 33,
+          "end": 39
+        },
+        {
+          "start": 478,
+          "end": 484
+        },
+        {
+          "start": 578,
+          "end": 584
+        }
+      ]
+    },
+    {
+      "condition_id": "c2",
+      "label": "본문 공백 제외 450자 이상",
+      "status": "missing",
+      "expected": 450,
+      "actual": 414,
+      "unit": "자",
+      "note": "36자 더 필요해요 (공백 제외, [사진] 줄 제외)",
+      "draft_spans": []
+    },
+    {
+      "condition_id": "c3",
+      "label": "사진 10장 이상",
+      "status": "missing",
+      "expected": 10,
+      "actual": 8,
+      "unit": "장",
+      "note": "2장 더 필요해요 (입력한 사진 수 기준)",
+      "draft_spans": []
+    },
+    {
+      "condition_id": "c4",
+      "label": "글 첫 부분에 대가성 문구",
+      "status": "kept",
+      "expected": null,
+      "actual": null,
+      "unit": null,
+      "note": "첫 줄에 있어요",
+      "draft_spans": [
+        {
+          "start": 0,
+          "end": 23
+        }
+      ]
+    },
+    {
+      "condition_id": "c5",
+      "label": "글 하단에 지도 첨부",
+      "status": "missing",
+      "expected": null,
+      "actual": null,
+      "unit": null,
+      "note": "지도를 첨부하지 않았다고 입력했어요",
+      "draft_spans": []
+    },
+    {
+      "condition_id": "c6",
+      "label": "매장 분위기와 좌석에 대한 느낌",
+      "status": "hold",
+      "expected": null,
+      "actual": null,
+      "unit": null,
+      "note": "셀 수 없는 조건이라 1주차에는 판단하지 않아요",
+      "draft_spans": []
+    },
+    {
+      "condition_id": "c7",
+      "label": "다른 카페와 비교하지 않기",
+      "status": "hold",
+      "expected": null,
+      "actual": null,
+      "unit": null,
+      "note": "셀 수 없는 조건이라 1주차에는 판단하지 않아요",
+      "draft_spans": []
+    },
+    {
+      "condition_id": "c8",
+      "label": "매장 외관 사진 1장 포함",
+      "status": "hold",
+      "expected": null,
+      "actual": null,
+      "unit": null,
+      "note": "사진 내용은 확인할 수 없어요",
+      "draft_spans": []
+    }
+  ]
+}

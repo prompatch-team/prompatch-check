@@ -1,0 +1,25 @@
+# 비밀 값
+.env
+.env.*
+!.env.example
+
+# 실제 원고는 올리지 않아요
+private/
+real-*/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# 기타
+.DS_Store
+*.log
+.vercel/

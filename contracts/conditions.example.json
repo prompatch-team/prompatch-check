@@ -1,0 +1,122 @@
+{
+  "version": "0.1-draft",
+  "guide_id": "sample-moraeal",
+  "conditions": [
+    {
+      "id": "c1",
+      "type": "keyword_count",
+      "label": "필수 키워드 \"전포동 카페\" 5회 이상",
+      "countable": true,
+      "params": {
+        "keyword": "전포동 카페",
+        "min": 5
+      },
+      "guide_quote": {
+        "text": "필수 키워드 \"전포동 카페\"를 본문에 5회 이상 넣어 주세요.",
+        "start": 137,
+        "end": 171
+      }
+    },
+    {
+      "id": "c2",
+      "type": "length",
+      "label": "본문 공백 제외 450자 이상",
+      "countable": true,
+      "params": {
+        "min": 450,
+        "count_spaces": false
+      },
+      "guide_quote": {
+        "text": "본문은 공백 제외 450자 이상으로 작성해 주세요.",
+        "start": 175,
+        "end": 203
+      }
+    },
+    {
+      "id": "c3",
+      "type": "photo_count",
+      "label": "사진 10장 이상",
+      "countable": true,
+      "params": {
+        "min": 10
+      },
+      "guide_quote": {
+        "text": "사진은 10장 이상 올려 주세요.",
+        "start": 207,
+        "end": 225
+      }
+    },
+    {
+      "id": "c4",
+      "type": "disclosure",
+      "label": "글 첫 부분에 대가성 문구",
+      "countable": true,
+      "params": {
+        "phrase": "업체로부터 음료를 제공받아 작성한 글입니다",
+        "position": "top"
+      },
+      "guide_quote": {
+        "text": "글 첫 부분에 \"업체로부터 음료를 제공받아 작성한 글입니다\" 문구를 넣어 주세요.",
+        "start": 253,
+        "end": 298
+      }
+    },
+    {
+      "id": "c5",
+      "type": "map",
+      "label": "글 하단에 지도 첨부",
+      "countable": true,
+      "params": {
+        "position": "bottom"
+      },
+      "guide_quote": {
+        "text": "글 하단에 매장 지도를 첨부해 주세요.",
+        "start": 302,
+        "end": 323
+      }
+    },
+    {
+      "id": "c6",
+      "type": "judgment",
+      "label": "매장 분위기와 좌석에 대한 느낌",
+      "countable": false,
+      "params": {
+        "question": "매장 분위기와 좌석에 대한 느낌이 있는가"
+      },
+      "guide_quote": {
+        "text": "매장 분위기와 좌석에 대한 솔직한 느낌을 적어 주세요.",
+        "start": 327,
+        "end": 357
+      }
+    },
+    {
+      "id": "c7",
+      "type": "judgment",
+      "label": "다른 카페와 비교하지 않기",
+      "countable": false,
+      "params": {
+        "question": "다른 카페와 비교하는 내용이 없는가"
+      },
+      "guide_quote": {
+        "text": "다른 카페와 비교하는 내용은 넣지 말아 주세요.",
+        "start": 361,
+        "end": 387
+      }
+    },
+    {
+      "id": "c8",
+      "type": "photo_count",
+      "label": "매장 외관 사진 1장 포함",
+      "countable": false,
+      "params": {
+        "min": 1,
+        "subject": "매장 외관"
+      },
+      "guide_quote": {
+        "text": "매장 외관 사진 1장을 꼭 포함해 주세요.",
+        "start": 226,
+        "end": 249
+      }
+    }
+  ]
+}

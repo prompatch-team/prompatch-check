@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "조건 목록 (연결 ①, owner 훈)",
+  "type": "object",
+  "required": [
+    "version",
+    "conditions"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "guide_id": {
+      "type": "string"
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "label",
+          "countable",
+          "params",
+          "guide_quote"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "keyword_count",
+              "length",
+              "photo_count",
+              "disclosure",
+              "map",
+              "judgment"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "countable": {
+            "type": "boolean"
+          },
+          "params": {
+            "type": "object"
+          },
+          "guide_quote": {
+            "type": "object",
+            "required": [
+              "text",
+              "start",
+              "end"
+            ],
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "start": {
+                "type": "integer"
+              },
+              "end": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

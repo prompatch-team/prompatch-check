@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "점검 결과 (연결 ②, owner 리릭)",
+  "type": "object",
+  "required": [
+    "version",
+    "summary",
+    "results"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "kept",
+        "missing",
+        "hold"
+      ],
+      "properties": {
+        "kept": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missing": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "hold": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "condition_id",
+          "label",
+          "status",
+          "note",
+          "draft_spans"
+        ],
+        "properties": {
+          "condition_id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "kept",
+              "missing",
+              "hold"
+            ]
+          },
+          "expected": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "actual": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "draft_spans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "start",
+                "end"
+              ],
+              "properties": {
+                "start": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "end": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
