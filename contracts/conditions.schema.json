@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "조건 목록 (연결 ①, owner 훈)",
+  "title": "조건 목록 (연결 ①) 0.2",
   "type": "object",
   "required": [
     "version",
@@ -8,10 +8,25 @@
   ],
   "properties": {
     "version": {
-      "type": "string"
+      "const": "0.2"
     },
     "guide_id": {
       "type": "string"
+    },
+    "platform": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "가이드 형식 (예: reviewplace). 모르면 null"
+    },
+    "campaign_type": {
+      "enum": [
+        "체험",
+        "기자단",
+        null
+      ],
+      "description": "체험: 직접 써 보고 쓰는 캠페인. 기자단: 체험 없이 자료로 쓰는 캠페인(원칙 점검 p6을 켬). 가이드에서 알 수 없으면 null"
     },
     "conditions": {
       "type": "array",
@@ -31,11 +46,19 @@
           },
           "type": {
             "enum": [
+              "title_keyword",
               "keyword_count",
               "length",
               "photo_count",
-              "disclosure",
+              "video_count",
+              "link",
               "map",
+              "hashtag",
+              "exact_phrase",
+              "banned_terms",
+              "required_phrase",
+              "disclosure",
+              "outside_draft",
               "judgment"
             ]
           },
@@ -45,10 +68,29 @@
           "countable": {
             "type": "boolean"
           },
+          "source": {
+            "enum": [
+              "ai",
+              "rule"
+            ],
+            "description": "이 조건을 누가 만들었는지. rule: 코드가 가이드의 고정 칸(리뷰플레이스)에서 직접 읽어 만듦. ai 또는 생략: AI가 뽑고 코드가 확인함"
+          },
           "params": {
-            "type": "object"
+            "type": "object",
+            "description": "조건 type마다 다른 값 (README의 표). needs_review와 unverified는 따로 정해진 표시",
+            "properties": {
+              "needs_review": {
+                "type": "boolean",
+                "description": "true: 기준 숫자를 인용 문구에서 코드로 확인하지 못함. 조건표에서 블로거가 숫자를 확인·수정해야 함"
+              },
+              "unverified": {
+                "type": "boolean",
+                "description": "true: AI가 낸 조건을 코드가 확인하지 못해 버렸고, 그 자리에 \"직접 봐 주세요\" 안내로 남긴 조건. type은 judgment라서 점검에서는 판단 보류로 세요. guide_quote는 코드가 가이드에서 찾은 줄이고, 줄을 찾지 못했으면 빈 글자(start = end = 0)"
+              }
+            }
           },
           "guide_quote": {
+            "description": "가이드 원문에 그대로 있는 문구와 그 글자 위치(코드 포인트). end는 포함하지 않음",
             "type": "object",
             "required": [
               "text",
@@ -60,11 +102,40 @@
                 "type": "string"
               },
               "start": {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 0
               },
               "end": {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 0
               }
+            },
+            "additionalProperties": false
+          },
+          "extra_quotes": {
+            "type": "array",
+            "description": "같은 조건을 말하는 다른 가이드 원문 (예: 캠페인 안내의 구매 링크 줄과 리뷰어 미션의 \"링크 삽입\"). 없으면 생략",
+            "items": {
+              "type": "object",
+              "required": [
+                "text",
+                "start",
+                "end"
+              ],
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "start": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "end": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false
             }
           }
         },

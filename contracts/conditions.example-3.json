@@ -1,0 +1,217 @@
+{
+  "version": "0.2",
+  "guide_id": "sample-iseulgyeol",
+  "platform": "reviewplace",
+  "campaign_type": "체험",
+  "conditions": [
+    {
+      "id": "c1",
+      "type": "title_keyword",
+      "label": "제목에 키워드 1개 이상",
+      "countable": true,
+      "params": {
+        "keywords": [
+          "수분크림 추천",
+          "이슬결 크림",
+          "건성 수분크림"
+        ],
+        "pick": "any"
+      },
+      "guide_quote": {
+        "text": "# 키워드 중 1개를 선택하여 제목 및 #태그에 넣어주세요.",
+        "start": 159,
+        "end": 192
+      }
+    },
+    {
+      "id": "c2",
+      "type": "hashtag",
+      "label": "#태그에 키워드 1개 이상",
+      "countable": true,
+      "params": {
+        "tags": [
+          "#수분크림추천",
+          "#이슬결크림",
+          "#건성수분크림"
+        ],
+        "pick": "any"
+      },
+      "guide_quote": {
+        "text": "# 키워드 중 1개를 선택하여 제목 및 #태그에 넣어주세요.",
+        "start": 159,
+        "end": 192
+      }
+    },
+    {
+      "id": "c3",
+      "type": "keyword_count",
+      "label": "본문 키워드 1개를 4번 이상",
+      "countable": true,
+      "params": {
+        "keywords": [
+          "수분크림 추천",
+          "이슬결 크림",
+          "건성 수분크림",
+          "겨울 수분크림"
+        ],
+        "min": 4,
+        "pick": "any",
+        "scope": "body"
+      },
+      "guide_quote": {
+        "text": "# 키워드 중 1개를 선택하여 본문에 4번 이상 넣어주세요.",
+        "start": 237,
+        "end": 270
+      }
+    },
+    {
+      "id": "c4",
+      "type": "disclosure",
+      "label": "대가성 문구를 리뷰 상단에",
+      "countable": true,
+      "params": {
+        "phrase": null,
+        "position": "top"
+      },
+      "guide_quote": {
+        "text": "공정위 대가성 문구는 반드시 리뷰 상단에 기재해주세요.",
+        "start": 279,
+        "end": 309
+      }
+    },
+    {
+      "id": "c5",
+      "type": "exact_phrase",
+      "label": "제품명 표기 이슬결 수분크림",
+      "countable": true,
+      "params": {
+        "allowed": "이슬결 수분크림",
+        "forbidden": [
+          "이슬결 보습크림"
+        ],
+        "scope": "title_and_body"
+      },
+      "guide_quote": {
+        "text": "제품명을 언급할 경우, 반드시 '이슬결 수분크림'으로 작성해주세요. ('이슬결 보습크림' x)",
+        "start": 313,
+        "end": 365
+      }
+    },
+    {
+      "id": "c6",
+      "type": "banned_terms",
+      "label": "치료·완치·효과 사용 금지",
+      "countable": true,
+      "params": {
+        "terms": [
+          "치료",
+          "완치",
+          "효과"
+        ],
+        "category": null,
+        "scope": "title_and_body"
+      },
+      "guide_quote": {
+        "text": "'치료', '완치', '효과' 단어는 사용하지 말아주세요.",
+        "start": 369,
+        "end": 401
+      }
+    },
+    {
+      "id": "c7",
+      "type": "required_phrase",
+      "label": "성분 문장 아래 개인차 문구",
+      "countable": true,
+      "params": {
+        "phrase": "*개인에 따라 차이가 있을 수 있습니다",
+        "scope": "body",
+        "after": "성분을 소개하는 문장"
+      },
+      "guide_quote": {
+        "text": "성분을 소개하는 문장 아래에는 \"*개인에 따라 차이가 있을 수 있습니다\" 문구를 넣어주세요.",
+        "start": 405,
+        "end": 456
+      }
+    },
+    {
+      "id": "c8",
+      "type": "link",
+      "label": "구매 링크 1개 이상",
+      "countable": true,
+      "params": {
+        "min": 1,
+        "url": "https://example.invalid/iseulgyeol"
+      },
+      "guide_quote": {
+        "text": "본문에 구매 링크를 넣어주세요. https://example.invalid/iseulgyeol",
+        "start": 460,
+        "end": 512
+      },
+      "extra_quotes": [
+        {
+          "text": "링크 삽입",
+          "start": 556,
+          "end": 561
+        }
+      ]
+    },
+    {
+      "id": "c9",
+      "type": "photo_count",
+      "label": "손등 사진 1장 이상",
+      "countable": false,
+      "params": {
+        "min": 1,
+        "subject": "제품을 손등에 바른 사진"
+      },
+      "guide_quote": {
+        "text": "제품을 손등에 바른 사진을 1장 이상 넣어주세요.",
+        "start": 516,
+        "end": 543
+      }
+    },
+    {
+      "id": "c10",
+      "type": "length",
+      "label": "800자 이상",
+      "countable": true,
+      "params": {
+        "min": 800,
+        "count_spaces": null
+      },
+      "guide_quote": {
+        "text": "800자 이상",
+        "start": 562,
+        "end": 569
+      }
+    },
+    {
+      "id": "c11",
+      "type": "photo_count",
+      "label": "사진 12장 이상",
+      "countable": true,
+      "params": {
+        "min": 12
+      },
+      "guide_quote": {
+        "text": "12장 이상",
+        "start": 570,
+        "end": 576
+      }
+    },
+    {
+      "id": "c12",
+      "type": "outside_draft",
+      "label": "리뷰 등록기간",
+      "countable": false,
+      "params": {
+        "what": "기간"
+      },
+      "guide_quote": {
+        "text": "리뷰 등록기간 12.03 ~ 12.10",
+        "start": 630,
+        "end": 651
+      }
+    }
+  ]
+}

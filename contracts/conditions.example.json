@@ -1,6 +1,8 @@
 {
-  "version": "0.1-draft",
+  "version": "0.2",
   "guide_id": "sample-moraeal",
+  "platform": null,
+  "campaign_type": "체험",
   "conditions": [
     {
       "id": "c1",
@@ -8,8 +10,12 @@
       "label": "필수 키워드 \"전포동 카페\" 5회 이상",
       "countable": true,
       "params": {
-        "keyword": "전포동 카페",
-        "min": 5
+        "keywords": [
+          "전포동 카페"
+        ],
+        "min": 5,
+        "pick": "any",
+        "scope": "body"
       },
       "guide_quote": {
         "text": "필수 키워드 \"전포동 카페\"를 본문에 5회 이상 넣어 주세요.",
