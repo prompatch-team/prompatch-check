@@ -23,6 +23,22 @@
 
 ## 여기에 적어 주세요
 
-- 쓰는 언어와 프레임워크:
+- 쓰는 언어와 프레임워크: Python 3.13 (세기는 표준 라이브러리만, API는 11/28~29에 정함)
 - 실행 방법과 API 주소:
-- 배포 위치:
+  - 점검 돌리기: `py be/run_check.py contracts/check-request.example.json contracts/conditions.example.json be/out.json`
+  - 테스트: `py -m unittest discover -s be/tests -v`
+  - 형식 확인: `py contracts/validate.py check-result be/out.json`
+  - API 주소: 아직 없음
+- 배포 위치: 아직 없음
+
+## 파일
+
+- `counter.py`: 조건 종류별로 세는 코드. `check(요청, 조건 목록)`이 점검 결과를 돌려줘요.
+- `run_check.py`: 명령창에서 JSON 파일로 점검을 돌려요.
+- `tests/test_counter.py`: 정답지 숫자와 같은지 고정하는 테스트예요.
+
+## 정답지와 맞춘 세는 방법
+
+- 글자 수 공백 포함: `[사진]`, `[지도]` 줄을 뺀 본문을 줄바꿈으로 잇고 앞뒤 빈 줄을 뺀 길이예요. 예시 원고에서 564자로 정답지 메모와 같아요.
+- 대가성 문구: 원고의 첫 3줄(빈 줄 포함)에서 문구를 정확히 같은 문자열로 찾아요.
+- `countable: false`인 사진 조건(`subject`가 있는 것)은 "사진 내용은 확인할 수 없어요"로 보류해요.
