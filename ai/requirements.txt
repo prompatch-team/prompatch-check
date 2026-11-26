@@ -1,0 +1,5 @@
+# -*- coding: utf-8 -*-
+# 2026-11-26에 설치해 확인한 버전이에요.
+anthropic==2.14.0
+# 테스트에서 형식(contracts) 확인에만 써요.
+jsonschema==4.26.0
