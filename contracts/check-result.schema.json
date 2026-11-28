@@ -175,7 +175,7 @@
           },
           "basis": {
             "type": "string",
-            "description": "근거 원문 이름과 날짜 (docs/evidence.md)"
+            "description": "근거 원문 이름과 날짜"
           }
         },
         "additionalProperties": false
