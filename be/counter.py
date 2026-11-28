@@ -72,7 +72,9 @@ def _result(cond, status, note, expected=None, actual=None, unit=None, spans=())
 
 def check_keyword(cond, req):
     p = cond["params"]
-    spans = find_keyword(req["draft_text"], p.get("keyword", ""))
+    # 형식 0.3: 키워드가 목록(keywords)이에요. 여러 개면 가장 많이 쓴 키워드로 세요
+    keywords = p.get("keywords") or [p.get("keyword", "")]
+    spans = max((find_keyword(req["draft_text"], k) for k in keywords), key=len)
     need, got = p.get("min"), len(spans)
     if need is None:
         return _result(cond, "hold", "기준 횟수가 없어서 판단하지 않아요", None, got, "회", spans)
