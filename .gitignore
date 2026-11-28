@@ -23,3 +23,7 @@ dist/
 .DS_Store
 *.log
 .vercel/
+
+# 저장소 밖 실제 사례를 실수로 넣지 않게
+real-data/
+*.private.*
