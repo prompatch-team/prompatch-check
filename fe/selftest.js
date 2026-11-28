@@ -135,6 +135,17 @@
     $('check').click();
     ok('원고만 고쳐 다시 점검하면 조건을 다시 뽑지 않고 적은 제목도 남음', await until(() => S.view === 'result' && S.res.request.draft_text.includes('덧붙인'))
       && extracts() === calls && S.res.request.title === '바다숲녹차 후기');
+    // 강남맛집 키워드(제목 + 본문 + 태그 칸): 붙여 넣은 글에 태그 칸이 없으면 판단 보류 + 태그 입력칸. 적은 태그는 tag_area로 (지어낸 키워드)
+    S.doc.conditions.push({ id: 'c98', type: 'keyword_count', label: '제목·본문·태그 칸에 지정 키워드 1회 이상', countable: true,
+      params: { keywords: ['지어낸태그말'], min: 1, pick: 'any', scope: 'title_body_tags' }, guide_quote: { ...quote } });
+    check();
+    ok('강남맛집: 태그 칸이 없으면 판단 보류 + 태그 칸 입력칸', await until(() => S.view === 'result' && !S.checking && row('c98'))
+      && row('c98').classList.contains('hold') && !!$('need-tags')
+      && row('c98').querySelector('.note').textContent.includes('태그 칸에 넣은 태그를 적어 주시면'));
+    type($('need-tags'), '#지어낸태그말');
+    $('recheck').click();
+    ok('강남맛집: 적은 태그는 tag_area로 가고 지킴', await until(() => S.view === 'result' && !S.checking
+      && (S.res.request.tag_area || []).includes('#지어낸태그말')) && row('c98').classList.contains('kept'));
     const local = location.origin;
     ok('우리 서버 말고는 요청이 없음', performance.getEntriesByType('resource').every(e => e.name.startsWith(local)));
     const pass = checks.filter(c => c[1]).length;
