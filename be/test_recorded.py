@@ -5,6 +5,7 @@ fastapi가 없으면 서버 시험은 건너뛰어요 (pip install -r be/require
 """
 import json
 import os
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -43,6 +44,14 @@ class Examples(unittest.TestCase):
             self.assertTrue(recorded.active(ai_ready=False))          # ai/ 코드가 없으면 늘 저장된 응답
             self.assertFalse(recorded.active(ai_ready=True))
         with mock.patch.dict(os.environ, {recorded.ENV: "recorded"}):
+            self.assertTrue(recorded.active(ai_ready=True))
+
+    def test_mode_can_be_set_in_the_env_file_only(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ):
+            os.environ.pop(recorded.ENV, None)
+            env = Path(tmp) / ".env"
+            env.write_text("# 주석\nPROMPATCH_AI_MODE=recorded\n", encoding="utf-8")
+            recorded.load_env(env)
             self.assertTrue(recorded.active(ai_ready=True))
 
 
