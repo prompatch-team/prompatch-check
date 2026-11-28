@@ -2,7 +2,7 @@
 
 `ai/` 폴더가 무엇을 받고 무엇을 내보내는지, 그리고 그 값이 왜 필요한지 적은 문서예요.
 
-- 기준: 지금 `ai/` 코드와 연결 형식 0.3 (`contracts/conditions.schema.json`)
+- 기준: 지금 `ai/` 코드와 연결 형식 0.4 (`contracts/conditions.schema.json`)
 - "누가 쓰나"의 BE·FE는 `be/engine.py`, `fe/app.js` 기준이에요.
 
 ## 한눈에
@@ -100,13 +100,13 @@
 
 ## 4. 내보내는 값 ①: 조건 목록
 
-BE와 화면으로 가는 값이에요. `contracts/conditions.schema.json` 0.3을 따라요.
+BE와 화면으로 가는 값이에요. `contracts/conditions.schema.json` 0.4을 따라요.
 
 ### 4-1. 맨 위
 
 | 값 | 나올 수 있는 값 | 왜 필요한가 | 누가 쓰나 |
 | --- | --- | --- | --- |
-| `version` | 늘 `"0.3"` | 받는 쪽이 어떤 형식으로 읽을지 알아야 해요. 형식이 다르면 바로 오류로 잡혀요 | BE, `validate.py` |
+| `version` | 늘 `"0.4"` | 받는 쪽이 어떤 형식으로 읽을지 알아야 해요. 형식이 다르면 바로 오류로 잡혀요 | BE, `validate.py` |
 | `guide_id` | 글자. 받았을 때만 있어요 | 어느 가이드의 결과인지 구분해요 | 개발, 측정 |
 | `platform` | `"reviewplace"` 또는 `null` | 리뷰플레이스 모양의 가이드인지 알려 줘요. 이 모양일 때만 코드가 고정 칸을 직접 읽어요 | AI 코드, 화면 표시 |
 | `campaign_type` | `"체험"`, `"기자단"`, `null` | 기자단은 직접 체험하지 않고 쓰는 글이라, 체험한 것처럼 쓴 표현을 따로 봐야 해요 (원칙 점검 p6) | BE |
@@ -221,7 +221,7 @@ AI 응답은 믿을 수 없는 입력으로 다뤄요. 가이드에 숨긴 글�
 
 ```json
 {
-  "version": "0.3",
+  "version": "0.4",
   "guide_id": "guide-sample",
   "platform": null,
   "campaign_type": "체험",

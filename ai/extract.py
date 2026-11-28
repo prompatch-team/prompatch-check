@@ -1,4 +1,4 @@
-"""가이드 원문 → 조건 목록 (contracts conditions 0.3).
+"""가이드 원문 → 조건 목록 (contracts conditions 0.4).
 
 LLM은 조건을 뽑기만 해요. 아래는 전부 코드가 해요.
 - 인용 문구(quote)가 가이드 원문에 실제로 있는지 확인하고, 없으면 그 조건을 버려요.
@@ -21,7 +21,7 @@ from pathlib import Path
 from . import client
 from .prompt import OUTPUT_SCHEMA, SYSTEM_PROMPT, TYPES
 
-VERSION = "0.3"
+VERSION = "0.4"
 ROOT = Path(__file__).resolve().parent.parent
 CACHE_DIR = Path(__file__).resolve().parent / "cache"
 PRIVATE_CACHE_DIR = CACHE_DIR / "private"     # 실제 가이드(private 샘플)의 AI 결과는 여기에 따로 둬요
@@ -261,7 +261,8 @@ PARAMS = {
         "min": _min(rc),
         # sum: "1개 이상 골라 총 5회"처럼 고른 키워드의 합계 (레뷰 고정 문장, 10단계)
         "pick": _choice(rc, "pick", ("any", "each", "sum", "both"), "any"),
-        "scope": _choice(rc, "scope", SCOPES, "body"),
+        # title_body_tags: 강남맛집 고정 칸에서 코드만 정해요(AI 응답 형식에는 없어요). 제목 + 본문 + 아래 태그 칸
+        "scope": _choice(rc, "scope", SCOPES + ("title_body_tags",), "body"),
         **({"free": True} if rc.get("free") is True else {}),
     },
     "length": lambda rc: {
@@ -278,7 +279,9 @@ PARAMS = {
     },
     "video_count": lambda rc: {"min": _min(rc)},
     "link": lambda rc: {"min": _min(rc), "url": _text(rc, "url") or None},
-    "map": lambda rc: {"position": _choice(rc, "position", ("bottom",), None)},
+    # strict false: 위치가 다르면 빠짐 대신 판단 보류("확인해 주세요"). 강남맛집 고정 칸에서 코드만 정해요
+    "map": lambda rc: {"position": _choice(rc, "position", ("bottom",), None),
+                       **({"strict": False} if rc.get("strict") is False else {})},
     "hashtag": lambda rc: {
         # 해시태그에는 띄어쓰기가 없어요: 키워드 "솔바람 찻집" → "#솔바람찻집"
         "tags": ["#" + re.sub(r"\s+", "", t.lstrip("#")) for t in _need(_list(rc, "tags"), "태그")],
@@ -631,7 +634,8 @@ GN_LINES = (      # 가이드라인 줄 안에 이 모양이 있으면 읽어요
     (re.compile(r"동영상을?\s*포함하여\s*사진은?\s*최소\s*(?P<n>\d+)\s*장"),
      lambda m: {"type": "photo_count", "label": f"사진 {_number(m)}장 이상 (동영상 포함)", "min": _number(m), "include_video": True}),
     (re.compile(r"(?P<n>\d+)\s*장\s*이상"), lambda m: {"type": "photo_count", "label": f"사진 {_number(m)}장 이상", "min": _number(m)}),
-    (re.compile(r"하단에\s*지도"), lambda m: {"type": "map", "label": "글 하단에 지도", "position": "bottom"}),
+    # 강남맛집은 지도 "하단" 위치가 달라도 검수를 통과한 글이 있어서 빠짐 대신 확인해 주세요로 (2026-11-28 카티 확정)
+    (re.compile(r"하단에\s*지도"), lambda m: {"type": "map", "label": "글 하단에 지도", "position": "bottom", "strict": False}),
     (re.compile(r"(?P<n>\d[\d,]*)\s*자\s*이상"),
      lambda m: {"type": "length", "label": f"{_number(m):,}자 이상", "min": _number(m), "count_spaces": "unspecified"}),
 )
@@ -725,14 +729,16 @@ def _gangnam(guide: str, lines: list) -> list:
                 continue
             words = list(dict.fromkeys(words))
             rule_line, block = lines[i + 2], (start, lines[i + 2][1])
-            # 강남맛집 키워드 규칙 (2026-11-27 블로거 확인): 지정 키워드 중 1~2개 + 자율 키워드 1개를 골라, 고른 키워드마다 본문 3회 이상.
-            # 제목은 지정 키워드 1개 이상, 본문은 지정 키워드 중 3회 이상인 것이 1개 이상이면 지킴. 자율 키워드는 블로거가 적어요
+            # 강남맛집 키워드 규칙 (2026-11-27 블로거 확인): 지정 키워드 중 1~2개 + 자율 키워드 1개를 골라, 고른 키워드마다 3회 이상.
+            # 제목은 지정 키워드 1개 이상, 횟수는 지정 키워드 중 3회 이상인 것이 1개 이상이면 지킴. 자율 키워드는 블로거가 적어요.
+            # 세는 범위 (2026-11-28 카티 확정, 실제 글 검수 통과): 제목 + 본문(해시태그 포함) + 아래 태그 칸, 정확히 같은 낱말만
             found.append(({"type": "title_keyword", "label": "제목에 지정 키워드 1개 이상", "keywords": words, "pick": "any"},
                           lines[i + 1], block))
-            found.append(({"type": "keyword_count", "label": f"본문에 지정 키워드 1개 이상을 {m['n']}회 이상",
-                           "keywords": words, "min": int(m["n"]), "pick": "any", "scope": "body"}, rule_line, block))
-            found.append(({"type": "keyword_count", "label": f"본문에 자율 키워드 {m['n']}회 이상 (직접 적어 주세요)",
-                           "keywords": [], "min": int(m["n"]), "pick": "each", "scope": "body", "free": True}, rule_line, block))
+            found.append(({"type": "keyword_count", "label": f"제목·본문·태그 칸에 지정 키워드 1개 이상을 {m['n']}회 이상",
+                           "keywords": words, "min": int(m["n"]), "pick": "any", "scope": "title_body_tags"}, rule_line, block))
+            found.append(({"type": "keyword_count", "label": f"제목·본문·태그 칸에 자율 키워드 {m['n']}회 이상 (직접 적어 주세요)",
+                           "keywords": [], "min": int(m["n"]), "pick": "each", "scope": "title_body_tags", "free": True},
+                          rule_line, block))
         elif key == "가이드라인":
             started = False
             for line in lines[i + 1:i + 10]:

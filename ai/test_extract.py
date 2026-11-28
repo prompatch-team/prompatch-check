@@ -844,11 +844,11 @@ class FixedForms(unittest.TestCase):
         self.assertEqual(by["title_keyword"]["params"], {"keywords": ["솔바람찻집", "성수카페", "성수디저트"], "pick": "any"})
         # 강남맛집 규칙(블로거 확인): 지정 키워드 중 1개 이상이 3회 이상 + 자율 키워드(블로거가 적음) 3회 이상
         fixed, free = [c for c in doc["conditions"] if c["type"] == "keyword_count"]
-        self.assertEqual(fixed["params"], {"keywords": ["솔바람찻집", "성수카페", "성수디저트"], "min": 3, "pick": "any", "scope": "body"})
-        self.assertEqual(free["params"], {"keywords": [], "min": 3, "pick": "each", "scope": "body", "free": True})
+        self.assertEqual(fixed["params"], {"keywords": ["솔바람찻집", "성수카페", "성수디저트"], "min": 3, "pick": "any", "scope": "title_body_tags"})
+        self.assertEqual(free["params"], {"keywords": [], "min": 3, "pick": "each", "scope": "title_body_tags", "free": True})
         self.assertNotIn("애매", fixed["label"])
         self.assertEqual(by["photo_count"]["params"], {"min": 15, "include_video": True})
-        self.assertEqual(by["map"]["params"], {"position": "bottom"})
+        self.assertEqual(by["map"]["params"], {"position": "bottom", "strict": False})
         self.assertEqual(by["length"]["params"]["min"], 1000)
         self.assertEqual([c["type"] for c in doc["conditions"]].count("outside_draft"), 1)
         self.assertFalse(any(c["label"].startswith(ex.CONFLICT) for c in doc["conditions"]))
@@ -1065,7 +1065,7 @@ class FixedSentences(unittest.TestCase):
     def test_banner_condition_stays_hold_in_the_engine(self):
         from be import engine
         doc = rule_doc(GANGNAM)
-        out = engine.check(doc, {"version": "0.3", "input_mode": "text", "counts_source": "user", "title": None,
+        out = engine.check(doc, {"version": "0.4", "input_mode": "text", "counts_source": "user", "title": None,
                                  "draft_text": "본문이에요", "links": [], "hashtags": [], "media": []})
         (r,) = [r for c, r in zip(doc["conditions"], out["results"]) if c["label"] == ex.BANNER_LABEL]
         self.assertEqual(r["status"], "hold")

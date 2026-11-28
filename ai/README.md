@@ -1,6 +1,6 @@
 # ai: 가이드에서 조건 뽑기 (훈)
 
-광고주 가이드 원문을 받아 `contracts/conditions.schema.json`(0.3) 형식의 조건 목록을 내보내요.
+광고주 가이드 원문을 받아 `contracts/conditions.schema.json`(0.4) 형식의 조건 목록을 내보내요.
 
 - **입력**: 가이드 원문 문자열 (예시: `samples/guide-sample.md`)
 - **출력**: 조건 목록 JSON (예시: `contracts/conditions.example.json`)과 버린 목록
