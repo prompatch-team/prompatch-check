@@ -111,11 +111,11 @@ class Draft:
         lines = draft.split("\n")
         skip = viewer_skip(lines)
         self.viewer_lines = sum(_key(lines[i]) not in EDITOR_LINES for i in skip)    # 편집 화면 줄과 겹치면 편집 화면 줄로만 세요        # 글만 붙여 넣었을 때만: 글쓰기 화면 블록의 동영상 제목·링크 카드 설명·지도 장소 이름과 주소 (서식이 있으면 구조로 이미 빠져요)
-        # 맨 아래 태그 칸 (강남맛집 키워드 횟수에만 써요, 2026-11-28). 서식에서 찾은 tag_area가 먼저이고,
-        # 없으면 보기 화면 줄 빼기로 뺀 줄 중 "#태그"로만 된 줄에서 찾아요. "+11"처럼 접힌 태그는 글자가 없어서 수만 알아요
+        # 맨 아래 태그 칸 (강남맛집 키워드 횟수에만 써요, 2026-11-28). 요청의 tag_area(서식에서 찾았거나 블로거가 적은 것)와,
+        # 보기 화면 줄 빼기로 뺀 줄 중 "#태그"로만 된 줄을 합쳐요(같은 태그는 한 번). "+11"처럼 접힌 태그는 글자가 없어서 수만 알아요
         tags = [w for i in sorted(skip) if (k := _key(lines[i])) and all(w.startswith("#") for w in k.split()) for w in k.split()]
         given = [nfc(t)[0] for t in request.get("tag_area") or [] if isinstance(t, str) and t.strip()]
-        self.tag_area = [t.strip().lstrip("#") for t in given or tags]
+        self.tag_area = list(dict.fromkeys(t.strip().lstrip("#") for t in given + tags))
         filled = [i for i, line in enumerate(lines) if _key(line)]
         last = _key(lines[filled[-1]]) if filled else ""
         self.hidden_tags = int(last[1:]) if not given and filled and filled[-1] in skip and MORE_TAGS.fullmatch(last) else 0
@@ -703,6 +703,7 @@ def rule_keyword_count(c, p, d):
 # 강남맛집 키워드 (2026-11-28 카티 확정, 실제 글 검수 통과로 확인): 제목 + 본문(본문 해시태그 포함) + 맨 아래 태그 칸을
 # 합쳐, 정확히 같은 낱말만 세요. 다른 업체는 rule_keyword_count의 원래 방식(포함 세기, 태그 칸 뺌) 그대로예요.
 PARTICLES = ("에서", "으로", "은", "는", "이", "가", "을", "를", "도", "의", "에", "로", "와", "과")
+TAG_AREA_ASK = "블로그 아래 태그 칸에 넣은 태그를 적어 주시면 함께 셀게요"
 TAG_SCOPE_RULE = "제목 + 본문(해시태그 포함) + 태그 칸을 합쳐 같은 낱말만 셌어요 (강남맛집 기준, 뒤에 붙은 조사 하나는 같은 낱말로 봐요)"
 
 
@@ -743,6 +744,8 @@ def tag_scope_count(c, p, d, need: int, keywords: list[str]):
     status = "kept" if ok else "missing"
     if not ok and d.hidden_tags:
         status, note = "hold", note + f". 접힌 태그 {d.hidden_tags}개는 세지 못했어요. 태그 칸을 펼쳐 확인해 주세요"
+    if not ok and not d.tag_area:         # 글쓰기 화면 복사에는 태그 칸이 따라오지 않아요 (화면이 태그 입력칸을 보여 줘요)
+        status, note = "hold", note + f". {TAG_AREA_ASK}"
     if not ok and d.title is None:
         status, note = "hold", note + f". {TITLE_UNKNOWN}"
     return result(c, status, note, spans, need, actual, "회")

@@ -301,6 +301,7 @@ function finalRequest() {
   }
   const tags = e.tags.split(/[,\s]+/).filter(Boolean).map(t => t.startsWith('#') ? t : '#' + t);
   req.hashtags = [...new Set([...req.hashtags, ...tags])];
+  if (tags.length) req.tag_area = [...new Set([...(req.tag_area || []), ...tags])];    // 적은 태그는 태그 칸 태그예요 (강남맛집 키워드 횟수)
   if (!S.captions) req.count_captions = false;
   return req;
 }
@@ -529,9 +530,15 @@ function needs() {
       h('input', { type: 'number', id: `need-min-${c.id}`, min: 0, inputmode: 'numeric', value: c.params.min }), h('span', { text: UNIT[c.type] || '' })),
     '가이드에서 이 숫자를 확인하지 못했어요. 가이드와 맞는지 봐 주세요.']);
   }
-  if (doc.conditions.some(c => c.type === 'hashtag' && byId[c.id] && byId[c.id].status === 'missing')) {
-    out.push(['need-tags', '에디터 태그 칸의 태그', h('input', { type: 'text', id: 'need-tags', value: S.extra.tags, placeholder: '#태그1, #태그2', autocomplete: 'off' }),
-      '태그 칸에 넣은 태그는 복사할 때 따라오지 않아요. 넣었다면 적어 주세요.']);
+  // 강남맛집 키워드(제목 + 본문 + 태그 칸)가 모자란데 붙여 넣은 글에 태그 칸이 없을 때 (글쓰기 화면 복사에는 따라오지 않아요)
+  const tagScope = doc.conditions.some(c => c.countable && c.type === 'keyword_count' && (c.params || {}).scope === 'title_body_tags'
+    && byId[c.id] && byId[c.id].status !== 'kept');
+  const askTagArea = tagScope && !(S.request.tag_area || []).length;
+  if (askTagArea || doc.conditions.some(c => c.type === 'hashtag' && byId[c.id] && byId[c.id].status === 'missing')) {
+    out.push(['need-tags', askTagArea ? '블로그 아래 태그 칸의 태그' : '에디터 태그 칸의 태그',
+      h('input', { type: 'text', id: 'need-tags', value: S.extra.tags, placeholder: '#태그1, #태그2', autocomplete: 'off' }),
+      askTagArea ? '블로그 아래 태그 칸에 넣은 태그를 적어 주시면 함께 셀게요. 강남맛집은 태그 칸의 키워드도 횟수에 들어가요.'
+        : '태그 칸에 넣은 태그는 복사할 때 따라오지 않아요. 넣었다면 적어 주세요.']);
   }
   if (!out.length) return null;
   const err = h('p', { class: 'field-err', id: 'needs-err', role: 'alert' });
