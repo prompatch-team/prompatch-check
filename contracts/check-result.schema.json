@@ -1,15 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "점검 결과 (연결 ②, owner 리릭)",
+  "title": "점검 결과 (연결 ②) 0.3",
+  "description": "draft_spans의 위치는 요청의 draft_text(field가 title이면 제목) 글자 위치(코드 포인트). end는 포함하지 않음",
   "type": "object",
   "required": [
     "version",
     "summary",
-    "results"
+    "results",
+    "principles"
   ],
   "properties": {
     "version": {
-      "type": "string"
+      "const": "0.3"
     },
     "summary": {
       "type": "object",
@@ -32,7 +34,8 @@
           "minimum": 0
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "가이드 조건(results)만 셉니다"
     },
     "results": {
       "type": "array",
@@ -59,6 +62,37 @@
               "hold"
             ]
           },
+          "note": {
+            "type": "string"
+          },
+          "draft_spans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "start",
+                "end"
+              ],
+              "properties": {
+                "start": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "end": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "field": {
+                  "enum": [
+                    "title",
+                    "body"
+                  ],
+                  "description": "없으면 body(draft_text)"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
           "expected": {
             "type": [
               "integer",
@@ -75,6 +109,37 @@
             "type": [
               "string",
               "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "principles": {
+      "type": "array",
+      "description": "네이버·공정위 원칙 점검. missing = 불리한 패턴을 찾음",
+      "items": {
+        "type": "object",
+        "required": [
+          "rule_id",
+          "label",
+          "status",
+          "basis",
+          "note",
+          "draft_spans"
+        ],
+        "properties": {
+          "rule_id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "kept",
+              "missing",
+              "hold"
             ]
           },
           "note": {
@@ -96,6 +161,87 @@
                 "end": {
                   "type": "integer",
                   "minimum": 0
+                },
+                "field": {
+                  "enum": [
+                    "title",
+                    "body"
+                  ],
+                  "description": "없으면 body(draft_text)"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "basis": {
+            "type": "string",
+            "description": "근거 원문 이름과 날짜 (docs/evidence.md)"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "tips": {
+      "type": "array",
+      "description": "없어도 됨. 도움이 될 팁. 판정이 아니라서 status가 없고 summary에 들어가지 않음. 화면은 점검 결과와 따로, 한 단계 가볍게 보여 줌",
+      "items": {
+        "type": "object",
+        "required": [
+          "tip_id",
+          "kind",
+          "label",
+          "note",
+          "draft_spans"
+        ],
+        "properties": {
+          "tip_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "description": "팁 종류. keyword_place(키워드를 넣을 자리 추천), keyword_spacing(띄어쓰기 안내). 종류는 늘어날 수 있음"
+          },
+          "condition_id": {
+            "type": "string",
+            "description": "이 팁이 나온 조건. 조건과 상관없는 팁이면 생략"
+          },
+          "label": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "description": "권하는 말로 씀. 공식 숫자가 없는 기준은 우리 기준이라고 적음"
+          },
+          "templates": {
+            "type": "array",
+            "description": "빈칸(○○)이 있는 짧은 고정 틀. 문장을 통째로 쓰지 않음. 없으면 빈 목록이거나 생략",
+            "items": {
+              "type": "string"
+            }
+          },
+          "draft_spans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "start",
+                "end"
+              ],
+              "properties": {
+                "start": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "end": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "field": {
+                  "enum": [
+                    "title",
+                    "body"
+                  ],
+                  "description": "없으면 body(draft_text)"
                 }
               },
               "additionalProperties": false
