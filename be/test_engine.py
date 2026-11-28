@@ -1312,8 +1312,9 @@ class GangnamTagScope(unittest.TestCase):
         r = self.gn(req(text, input_mode="text", counts_source="user", title="솔바람찻집 후기"), need=5)
         self.assertEqual(r["status"], "hold")                       # 모자라지만 접힌 태그 3개를 못 셌어요
         self.assertIn("접힌 태그 3개", r["note"])
-        r = self.gn(req(text.replace("\n+3", ""), input_mode="text", counts_source="user", title="솔바람찻집 후기"), need=5)
-        self.assertEqual(r["status"], "missing")                    # 접힌 태그가 없으면 빠짐
+        r = self.gn(req(text.replace("\n+3", ""), input_mode="text", counts_source="user", title="솔바람찻집 후기",
+                        tag_area=["#다른태그"]), need=5)
+        self.assertEqual(r["status"], "missing")                    # 태그 칸을 알고 접힌 태그가 없으면 빠짐
 
     def test_each_free_keyword_and_title_unknown(self):
         r = self.gn(req("다른태그 글.", title=None, tag_area=["#솔바람찻집"]), need=3, pick="each")
@@ -1337,3 +1338,16 @@ class GangnamTagScope(unittest.TestCase):
         r = one("map", {"position": "bottom", "strict": False}, request)
         self.assertEqual(r["status"], "hold")
         self.assertIn("확인해 주세요", r["note"])
+
+    def test_no_tag_area_asks_for_tags(self):
+        # 글쓰기 화면 복사: 태그 칸이 따라오지 않아요 → 모자라면 빠짐 대신 판단 보류 + 태그를 적어 달라고 해요
+        text = "솔바람찻집에서 차를 마셨어요."
+        r = self.gn(req(text, title="솔바람찻집 후기"))
+        self.assertEqual((r["status"], r["actual"]), ("hold", 2))
+        self.assertIn(engine.TAG_AREA_ASK, r["note"])
+        r = self.gn(req(text, title="솔바람찻집 후기", tag_area=["#솔바람찻집", "#다른태그"]))     # 블로거가 적은 태그
+        self.assertEqual((r["status"], r["actual"]), ("kept", 3))
+        self.assertIn("제목 1 + 본문 1 + 태그 칸 1", r["note"])
+        r = self.gn(req(text + " 솔바람찻집이 좋아요.", title="솔바람찻집 후기"))                  # 이미 기준을 넘으면 묻지 않아요
+        self.assertEqual(r["status"], "kept")
+        self.assertNotIn(engine.TAG_AREA_ASK, r["note"])
