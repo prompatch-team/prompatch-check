@@ -8,7 +8,7 @@
 
 ## 실행
 
-1. 설치: `pip install -r ai/requirements.txt` / 테스트 (API 안 부름, 가짜 AI 응답): `python -m unittest ai.test_extract ai.test_judge ai.test_security`
+1. 설치: `pip install -r ai/requirements.txt` / 테스트 (API 안 부름, 가짜 AI 응답): 저장소 맨 위에서 `python -m unittest` (모든 영역 테스트를 한 번에 돌려요)
 2. 예시 가이드로 단독 실행 (`.env`의 `ANTHROPIC_API_KEY`, AI 1번): `python -m ai samples/guide-sample.md --call --compare contracts/conditions.example.json`
 3. 서버에 붙여 쓰기: `python -m uvicorn be.server:app --port 8000` (키 없이 돌리려면 `.env`에 `PROMPATCH_AI_MODE=recorded`)
 
