@@ -22,6 +22,22 @@
 | `client.py` | AI API를 부르는 유일한 곳. 시간 제한, 1번 다시 시도, 실패 이유 코드, 토큰으로 계산한 비용 |
 | `compare.py`, `__main__.py` | 개발용 명령. 결과는 `ai/cache/`에 저장해서 같은 가이드면 다시 부르지 않아요 (`ai/.gitignore`로 올리지 않아요) |
 | `IO.md` | 주고받는 값과 누가 쓰는지 |
+| `eval.py` | 실제 가이드로 정확도 재기 (아래) |
+
+## 정확도 재기 (`python -m ai.eval`)
+
+실제 가이드·정답지·저장된 응답은 `.env`의 `PROMPATCH_PRIVATE_DATA` 폴더에서만 읽고, 화면에는 숫자만 써요. 폴더가 없으면 "비공개 자료가 없어요"라고 알려 주고 끝나요. 실제 자료는 카티에게 받아요.
+
+- `python -m ai.eval`: 저장된 응답을 지금 코드로 다시 채점해요. AI를 부르지 않아요.
+- `python -m ai.eval --max-calls 12 --repeat 2`: 가이드마다 2번씩 실제로 불러 채점해요. 상한은 코드가 세고(최대 60번), 응답은 그 폴더의 `results/`에만 저장해요.
+
+```
+PROMPATCH_PRIVATE_DATA/
+  guides/<이름>.txt                  실제 가이드 원문
+  answer-keys/scoring.json           채점표 (가이드마다 file, form, items. 같은 양식의 공통 항목은 template_items)
+  responses/<묶음>/<가이드>-<번>.json  저장된 AI 응답 ({"response": ...})
+  results/                           --max-calls로 부른 응답이 쌓이는 곳
+```
 
 ## 코드가 확인하는 것 (AI 결과를 그대로 믿지 않아요)
 
