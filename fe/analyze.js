@@ -17,7 +17,7 @@ const isDocTitle  = w => w.includes('title') && w.includes('document');   // se-
 const isComponent = w => w.includes('component');                         // se-component
 // ─────────────────────────────────────────────────────────────────────────
 
-const VERSION = '0.3';
+const VERSION = '0.4';
 const KIND = { photo: '사진', video: '동영상', map: '지도·장소', oglink: '링크 카드', sticker: '스티커',
   banner: '캠페인 배너', profile: '프로필 사진', other: '본문 사진 블록 밖의 그림' };
 // 사진 수에서 빼는 그림 (10단계, 실제 붙여넣기에서 찾은 것). 주소는 읽기만 하고 불러오지 않아요.
@@ -248,6 +248,9 @@ function analyze(html) {
     videoCount: units.filter(u => u.kind === 'video').length,
     hasMap: units.some(u => u.kind === 'map'),
     hashtags: hashtagsIn(bodyOnly + '\n' + outside.join('\n')),
+    // 아래 태그 칸: 글 블록 밖의 해시태그 (강남맛집 키워드 횟수에 써요, 2026-11-28)
+    // ponytail: 글 블록 밖 해시태그를 모두 태그 칸으로 봐요. 태그 칸이 아닌 블록 밖 해시태그가 보이면 태그 칸 class로 좁히기
+    tagArea: hashtagsIn(outside.join('\n')),
     top: [...top], path,
     dump: structure(doc),
   };
@@ -280,14 +283,14 @@ function structure(doc) {
   ].join('\n');
 }
 
-// contracts/check-request (0.3) 모양. 이 JSON이 점검 요청 형식의 기준이에요.
+// contracts/check-request (0.4) 모양. 이 JSON이 점검 요청 형식의 기준이에요.
 // counts_source: 이 도구는 숫자를 고치는 칸이 없어서 html이면 항상 parsed(자동으로 센 값)예요.
 function toRequest(r) {
   return {
     version: VERSION, input_mode: 'html', counts_source: 'parsed', title: r.title, draft_text: r.draft,
     photo_count: r.photoCount, video_count: r.videoCount, has_map: r.hasMap,
     links: r.links.filter(l => l.where === 'body' || l.where === 'oglink').map(l => ({ url: l.url, start: l.start })),
-    hashtags: r.hashtags, media: r.media, captions: r.captions,
+    hashtags: r.hashtags, tag_area: r.tagArea, media: r.media, captions: r.captions,
     banner_count: r.bannerCount, banner_top: r.bannerTop,
   };
 }
@@ -295,7 +298,7 @@ function toTextRequest(plain) {
   return {
     version: VERSION, input_mode: 'text', counts_source: 'user', title: null, draft_text: plain,
     photo_count: null, video_count: null, has_map: null,
-    links: [], hashtags: hashtagsIn(plain), media: [], captions: [],
+    links: [], hashtags: hashtagsIn(plain), tag_area: [], media: [], captions: [],   // 글만이면 태그 칸은 엔진이 글에서 찾아요
     banner_count: null, banner_top: null,                // 글만 붙여 넣으면 그림을 못 봐요
   };
 }

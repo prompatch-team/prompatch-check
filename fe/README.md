@@ -2,8 +2,8 @@
 
 블로거가 가이드와 원고를 붙여 넣으면, 빠진 조건과 그 자리를 원고 위에 표시해 보여 줘요. 연결 ② owner예요.
 
-- **보내는 것**: 점검 요청 (`contracts/check-request.example.json`, 0.3)
-- **받는 것**: 점검 결과 (`contracts/check-result.example.json`, 0.3)
+- **보내는 것**: 점검 요청 (`contracts/check-request.example.json`, 0.4)
+- **받는 것**: 점검 결과 (`contracts/check-result.example.json`, 0.4)
 - 지금 화면은 리릭님이 이어서 만드실 **출발점**이에요. 디자인과 화면 구조는 리릭님이 정하시면 그대로 따를게요.
 
 ## 실행
