@@ -1,4 +1,4 @@
-"""규칙 엔진: 조건 목록 + 점검 요청 → 점검 결과 (contracts 0.3).
+"""규칙 엔진: 조건 목록 + 점검 요청 → 점검 결과 (contracts 0.4).
 
 - 셀 수 있는 조건은 전부 여기서 코드로 판정해요. LLM을 부르지 않아요.
 - 받은 가이드·원고 글을 화면이나 로그, 파일에 남기지 않아요. 이 파일에서는 출력 함수와 로그 모듈을 쓰지 않아요.
@@ -15,7 +15,7 @@ import unicodedata
 
 from . import phrases
 
-VERSION = "0.3"
+VERSION = "0.4"
 MARKS = {"[사진]": "photo", "[동영상]": "video", "[지도]": "map"}
 # 네이버 글쓰기 화면에서 본문을 복사하면 같이 딸려 오는 편집 화면 줄. 줄 전체가 이것과 같을 때만 빼요.
 EDITOR_LINES = {"대표사진 삭제", "대표사진 설정", "AI 활용 설정", "사진 설명을 입력하세요.", "동영상 설명을 입력하세요.",
@@ -111,6 +111,14 @@ class Draft:
         lines = draft.split("\n")
         skip = viewer_skip(lines)
         self.viewer_lines = sum(_key(lines[i]) not in EDITOR_LINES for i in skip)    # 편집 화면 줄과 겹치면 편집 화면 줄로만 세요        # 글만 붙여 넣었을 때만: 글쓰기 화면 블록의 동영상 제목·링크 카드 설명·지도 장소 이름과 주소 (서식이 있으면 구조로 이미 빠져요)
+        # 맨 아래 태그 칸 (강남맛집 키워드 횟수에만 써요, 2026-11-28). 서식에서 찾은 tag_area가 먼저이고,
+        # 없으면 보기 화면 줄 빼기로 뺀 줄 중 "#태그"로만 된 줄에서 찾아요. "+11"처럼 접힌 태그는 글자가 없어서 수만 알아요
+        tags = [w for i in sorted(skip) if (k := _key(lines[i])) and all(w.startswith("#") for w in k.split()) for w in k.split()]
+        given = [nfc(t)[0] for t in request.get("tag_area") or [] if isinstance(t, str) and t.strip()]
+        self.tag_area = [t.strip().lstrip("#") for t in given or tags]
+        filled = [i for i, line in enumerate(lines) if _key(line)]
+        last = _key(lines[filled[-1]]) if filled else ""
+        self.hidden_tags = int(last[1:]) if not given and filled and filled[-1] in skip and MORE_TAGS.fullmatch(last) else 0
         editor = editor_skip(lines) - skip if self.text_mode else set()
         skip |= editor
         captions = [(s, e) for c in request.get("captions") or []
@@ -611,6 +619,8 @@ def rule_keyword_count(c, p, d):
         # 강남맛집 자율 키워드: 블로거가 조건표에 적어야 셀 수 있어요
         return result(c, "hold", FREE_EMPTY, (), need, None, "회")
     keywords = strs(p["keywords"])
+    if p.get("scope") == "title_body_tags":
+        return tag_scope_count(c, p, d, need, keywords)
     texts, unknown = fields(d, p.get("scope", "body"))
     # 본문에 직접 쓴 #해시태그 안의 키워드도 본문 횟수에 세요 (2026-11-27 카티 결정). 맨 아래 태그 칸은 원고(draft_text)에
     # 없어서(서식) 또는 보기 화면 줄 빼기로(글자만) 세지 않아요. 결과에는 "본문 글 N번 + 해시태그 M번"으로 나눠 보여 줘요.
@@ -690,6 +700,54 @@ def rule_keyword_count(c, p, d):
     return result(c, "kept" if ok else "missing", note + body_front_note(d, spans), spans, need, actual, "회")
 
 
+# 강남맛집 키워드 (2026-11-28 카티 확정, 실제 글 검수 통과로 확인): 제목 + 본문(본문 해시태그 포함) + 맨 아래 태그 칸을
+# 합쳐, 정확히 같은 낱말만 세요. 다른 업체는 rule_keyword_count의 원래 방식(포함 세기, 태그 칸 뺌) 그대로예요.
+PARTICLES = ("에서", "으로", "은", "는", "이", "가", "을", "를", "도", "의", "에", "로", "와", "과")
+TAG_SCOPE_RULE = "제목 + 본문(해시태그 포함) + 태그 칸을 합쳐 같은 낱말만 셌어요 (강남맛집 기준, 뒤에 붙은 조사 하나는 같은 낱말로 봐요)"
+
+
+def word_hits(text: str, k: str) -> list[int]:
+    """정확히 같은 낱말의 위치: 앞은 낱말 경계(글 처음, 띄어쓰기, 문장부호, #), 뒤는 낱말 경계나 조사 하나 + 경계."""
+    def edge(i: int) -> bool:
+        return i >= len(text) or not WORD_CHAR.match(text[i])
+    out = []
+    for s in find_all(text, k):
+        e = s + len(k)
+        if (s == 0 or not WORD_CHAR.match(text[s - 1])) and (edge(e) or any(
+                text.startswith(p, e) and edge(e + len(p)) for p in PARTICLES)):
+            out.append(s)
+    return out
+
+
+def tag_scope_where(d: Draft, k: str) -> tuple[list[dict], list[dict], int]:
+    """(제목 위치, 본문 위치, 태그 칸 횟수). 태그 칸은 원고 밖이라 위치 없이 횟수만이에요."""
+    return ([span("title", s, s + len(k)) for s in word_hits(d.title or "", k)],
+            [body_span(s, s + len(k)) for s in word_hits(d.text, k)],
+            sum(len(word_hits("#" + t, k)) for t in d.tag_area))
+
+
+def tag_scope_count(c, p, d, need: int, keywords: list[str]):
+    where = {k: tag_scope_where(d, k) for k in keywords}
+    n = {k: len(t) + len(b) + g for k, (t, b, g) in where.items()}
+    told = lambda k: f'"{k}" {n[k]}회 (제목 {len(where[k][0])} + 본문 {len(where[k][1])} + 태그 칸 {where[k][2]})'
+    if p.get("pick") == "each":
+        short = [k for k in keywords if n[k] < need]
+        ok, actual, shown = not short, min(n.values()), short or keywords
+        head = "모든 키워드가 기준을 넘어요" if ok else "기준보다 적은 키워드"
+    else:                                                 # any: 고른 키워드 중 하나가 기준을 넘으면 지킴
+        actual = max(n.values())
+        ok, shown = actual >= need, keywords
+        head = f"{need}회 이상인 키워드가 있어요" if ok else f"{need}회 이상인 키워드가 없어요"
+    spans = [s for k in keywords for part in where[k][:2] for s in part]
+    note = f"{head}: " + ", ".join(told(k) for k in shown) + f". {TAG_SCOPE_RULE}"
+    status = "kept" if ok else "missing"
+    if not ok and d.hidden_tags:
+        status, note = "hold", note + f". 접힌 태그 {d.hidden_tags}개는 세지 못했어요. 태그 칸을 펼쳐 확인해 주세요"
+    if not ok and d.title is None:
+        status, note = "hold", note + f". {TITLE_UNKNOWN}"
+    return result(c, status, note, spans, need, actual, "회")
+
+
 TEXT_ONLY = "글자만으로 센 값이에요. 서식(HTML)이 없어서 보기 화면 줄은 규칙으로 뺐어요"
 
 
@@ -766,6 +824,8 @@ def rule_map(c, p, d):
     spans = [body_span(last, last + len("[지도]"))]
     rule = "지도 뒤에 글 문단이 없으면 하단으로 봐요 (해시태그 줄, 주소 줄, 사진 줄은 글로 안 봐요)"
     if d.text_after(last):
+        if p.get("strict") is False:      # 강남맛집: 위치가 달라도 검수를 통과한 글이 있어서 확인해 주세요로 (2026-11-28)
+            return result(c, "hold", f"지도 뒤에 글이 더 있어요. \"하단\" 위치가 가이드와 맞는지 확인해 주세요. {rule}", spans)
         return result(c, "missing", f"지도 뒤에 글이 더 있어요. {rule}", spans)
     return result(c, "kept", f"지도가 글 맨 아래에 있어요. {rule}", spans)
 
@@ -1210,8 +1270,12 @@ def short_keywords(c: dict, r: dict, d: Draft) -> tuple[list[tuple[str, int]], l
     keywords = list(dict.fromkeys(p["keywords"]))
     if c["type"] == "title_keyword":
         return [(k, 1) for k in keywords if k not in d.title], [("title", d.title)]
-    texts, _ = fields(d, p.get("scope", "body"))
-    counts = {k: sum(len(find_all(t, k)) for _, t in texts) for k in keywords}
+    if p.get("scope") == "title_body_tags":       # 강남맛집: 판정과 같이 제목 + 본문 + 태그 칸, 같은 낱말만
+        texts = ([("title", d.title)] if d.title is not None else []) + [("body", d.text)]
+        counts = {k: (lambda t, b, g: len(t) + len(b) + g)(*tag_scope_where(d, k)) for k in keywords}
+    else:
+        texts, _ = fields(d, p.get("scope", "body"))
+        counts = {k: sum(len(find_all(t, k)) for _, t in texts) for k in keywords}
     if p.get("pick") == "sum":          # 합계 기준: 어느 키워드를 넣어도 돼요. 많이 쓴 것부터
         lack = p["min"] - sum(counts.values())
         return [(k, lack) for k in sorted(keywords, key=lambda k: -counts[k])], texts
@@ -1319,7 +1383,7 @@ def tips(conds: list[dict], results: list[dict], d: Draft) -> list[dict]:
 # ── 전체 ─────────────────────────────────────────────────────────────────
 
 def check(conditions: dict, request: dict) -> dict:
-    """조건 목록(conditions 0.3)과 점검 요청(check-request 0.3)을 받아 점검 결과(check-result 0.3)를 돌려줘요."""
+    """조건 목록(conditions 0.4)과 점검 요청(check-request 0.4)을 받아 점검 결과(check-result 0.4)를 돌려줘요."""
     d = Draft(request)
     conds = conditions.get("conditions") or []
     results = [judge(c, d) for c in conds]

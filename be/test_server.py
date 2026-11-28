@@ -257,7 +257,7 @@ class Privacy(ServerCase):
             self.assertIn(r.status_code, (413, 422), draft[:10])
             self.assertIn("정성 판단을 하지 않았어요", r.json()["error"])
         self.assertEqual(fake_judge.calls, 0)
-        only_static = {"version": "0.3", "conditions": [c for c in doc["conditions"] if c["countable"]]}
+        only_static = {"version": "0.4", "conditions": [c for c in doc["conditions"] if c["countable"]]}
         self.assertEqual(self.post("/api/judge", {"conditions": only_static, "request": request}).status_code, 200)
         self.assertEqual(fake_judge.calls, 0)                       # 정성 조건이 없으면 AI를 부르지 않아요
 
@@ -497,7 +497,7 @@ class Events(ServerCase):
     def test_zero_conditions_is_flagged(self):
         request = load("contracts", "check-request.example.json")
         with captured() as logs:
-            self.post("/api/check", {"conditions": {"version": "0.3", "platform": None, "campaign_type": None, "conditions": []},
+            self.post("/api/check", {"conditions": {"version": "0.4", "platform": None, "campaign_type": None, "conditions": []},
                                      "request": request})
         (record,) = [e for e in logs.events if e["event"] == "check"]
         self.assertEqual((record["conditions"], record["anomaly"]), (0, "NO_CONDITIONS"))

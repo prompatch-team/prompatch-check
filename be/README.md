@@ -1,6 +1,6 @@
 # be: 원고에서 세고 결과 돌려주기 (감자)
 
-조건 목록과 원고를 받아 조건마다 지킴·빠짐·판단 보류를 정하고 `contracts/check-result.schema.json`(0.3) 형식으로 돌려줘요. 배포와 전체 흐름(US5) owner예요.
+조건 목록과 원고를 받아 조건마다 지킴·빠짐·판단 보류를 정하고 `contracts/check-result.schema.json`(0.4) 형식으로 돌려줘요. 배포와 전체 흐름(US5) owner예요.
 
 - **입력**: 점검 요청 (`contracts/check-request.example.json`) + 조건 목록 (`contracts/conditions.example.json`)
 - **출력**: 점검 결과 (`contracts/check-result.example.json`)
@@ -68,4 +68,4 @@
 - **본문 첫 문단** = 첫 글 줄부터 첫 빈 줄(또는 사진·동영상·지도 줄) 전까지.
 - **편집 화면 줄·보기 화면 줄·숨은 문자·자모가 나뉜 한글**: 세지 않거나 합쳐서 세요. 위치(`draft_spans`)는 받은 `draft_text` 그대로예요.
 - **원칙 점검**: p1~p7은 `contracts/README.md`의 표대로예요. 숫자 기준(2배, 3개, 30자)은 `engine.py` 맨 위에 있고 `note`에 "우리 기준"이라고 적어요.
-- **글자 수가 `counter.py`와 달라요**: 공백 포함은 엔진이 줄바꿈을 세지 않아서 예시 원고에서 550자, `counter.py`는 564자예요. 형식 0.3 기준은 엔진 쪽이에요.
+- **글자 수가 `counter.py`와 달라요**: 공백 포함은 엔진이 줄바꿈을 세지 않아서 예시 원고에서 550자, `counter.py`는 564자예요. 형식 0.4 기준은 엔진 쪽이에요.

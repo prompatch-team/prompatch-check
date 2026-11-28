@@ -22,7 +22,7 @@ def load(name: str) -> dict:
 
 def req(text: str, **kw) -> dict:
     base = {
-        "version": "0.3", "input_mode": "html", "counts_source": "parsed", "title": None,
+        "version": "0.4", "input_mode": "html", "counts_source": "parsed", "title": None,
         "draft_text": text, "photo_count": None, "video_count": None, "has_map": None,
         "links": [], "hashtags": [], "media": [],
     }
@@ -37,7 +37,7 @@ def cond(kind: str, params: dict, countable: bool = True, cid: str = "c1") -> di
 
 def run(conds, request) -> dict:
     conds = conds if isinstance(conds, list) else [conds]
-    return engine.check({"version": "0.3", "conditions": conds}, request)
+    return engine.check({"version": "0.4", "conditions": conds}, request)
 
 
 def one(kind: str, params: dict, request: dict, **kw) -> dict:
@@ -319,7 +319,7 @@ class Rules(unittest.TestCase):
         for r in holds:
             self.assertEqual(r["status"], "hold")
             self.assertIn(ask, r["note"])
-        doc = {"version": "0.3", "campaign_type": "기자단", "conditions": []}
+        doc = {"version": "0.4", "campaign_type": "기자단", "conditions": []}
         self.assertIn(ask, rule(engine.check(doc, req(text)), "p6")["note"])
         for sample, request in (("conditions.example.json", load("check-request.example.json")), ("conditions.example-2.json", GOOD2)):
             conditions = load(sample)
@@ -504,7 +504,7 @@ class Decisions(unittest.TestCase):
         self.assertEqual(judge("글.\n[지도]\n주소는 https://example.invalid/a 예요"), "missing")       # 주소가 든 문장은 글
 
     def test_5_press_campaign_p6_stays_on_hold(self):
-        doc = {"version": "0.3", "campaign_type": "기자단", "conditions": []}
+        doc = {"version": "0.4", "campaign_type": "기자단", "conditions": []}
         self.assertEqual(rule(engine.check(doc, req("자료를 바탕으로 썼어요.")), "p6")["status"], "hold")
 
     def test_6_summary_leaves_out_conditions_outside_the_draft(self):
@@ -567,12 +567,12 @@ class Principles(unittest.TestCase):
 
     def test_p6_only_for_press_campaigns(self):
         def ids(campaign_type):
-            doc = {"version": "0.3", "campaign_type": campaign_type, "conditions": []}
+            doc = {"version": "0.4", "campaign_type": campaign_type, "conditions": []}
             return [p["rule_id"] for p in engine.check(doc, req("글"))["principles"]]
         self.assertEqual(ids("기자단"), ["p1", "p2", "p3", "p4", "p5", "p6"])
         self.assertEqual(ids("체험"), ["p1", "p2", "p3", "p4", "p5"])
         self.assertEqual(ids(None), ["p1", "p2", "p3", "p4", "p5"])
-        doc = {"version": "0.3", "campaign_type": "기자단", "conditions": []}
+        doc = {"version": "0.4", "campaign_type": "기자단", "conditions": []}
         self.assertEqual(rule(engine.check(doc, req("글")), "p6")["status"], "hold")
 
     def test_no_guarantee_wording(self):
@@ -1128,7 +1128,7 @@ class Tips(unittest.TestCase):
                    (load("conditions.example-2.json"), GOOD2),
                    (load("conditions.example-3.json"),
                     json.loads((ROOT / "samples" / "draft-04.request.json").read_text(encoding="utf-8"))),
-                   ({"version": "0.3", "conditions": TIP_CONDS}, TIP_REQ)]
+                   ({"version": "0.4", "conditions": TIP_CONDS}, TIP_REQ)]
         made = 0
         for conditions, request in samples:
             with_tips = engine.check(conditions, request)
@@ -1271,3 +1271,69 @@ class Tips(unittest.TestCase):
         validator = Draft202012Validator(load("check-result.schema.json"))
         self.assertEqual([e.message for e in validator.iter_errors(self.out)], [])
         self.assertEqual([e.message for e in validator.iter_errors({k: v for k, v in self.out.items() if k != "tips"})], [])
+
+
+class GangnamTagScope(unittest.TestCase):
+    """2026-11-28 강남맛집 키워드: 제목 + 본문(해시태그 포함) + 아래 태그 칸, 정확히 같은 낱말만 (뒤 조사 하나는 허용).
+    다른 업체(scope body 등)는 그대로예요. 지도 strict false는 위치가 다르면 판단 보류. 모두 지어낸 글이에요."""
+    K = "솔바람찻집"
+    TEXT = "솔바람찻집에서 차를 마셨어요. 솔바람찻집집은 다른 가게예요. 큰솔바람찻집도 아니에요.\n\n#솔바람찻집"
+    TAGS = ["#솔바람찻집", "#솔바람찻집추천"]
+
+    def gn(self, request, need=3, pick="any", keywords=None):
+        return one("keyword_count", {"keywords": keywords or [self.K], "min": need, "pick": pick, "scope": "title_body_tags"},
+                   request)
+
+    def test_title_body_and_tag_area_exact_words(self):
+        r = self.gn(req(self.TEXT, title="솔바람찻집 후기", tag_area=self.TAGS))
+        # 제목 1, 본문 2("솔바람찻집에서", "#솔바람찻집"), 태그 칸 1("#솔바람찻집추천"은 다른 낱말)
+        self.assertEqual((r["status"], r["actual"]), ("kept", 4))
+        self.assertIn("제목 1 + 본문 2 + 태그 칸 1", r["note"])
+        body = [cut(self.TEXT, s) for s in r["draft_spans"] if s.get("field") != "title"]
+        self.assertEqual(body, [self.K, self.K])
+
+    def test_other_platforms_count_as_before(self):
+        # scope body: 포함 세기 그대로, 태그 칸은 세지 않아요
+        r = one("keyword_count", {"keywords": [self.K], "min": 3, "scope": "body"},
+                req(self.TEXT, title="솔바람찻집 후기", tag_area=self.TAGS * 5))
+        self.assertEqual(r["actual"], 4)
+        self.assertNotIn("태그 칸", r["note"])
+
+    def test_particles(self):
+        for text, n in (("솔바람찻집은 좋아요", 1), ("솔바람찻집으로 가요", 1), ("솔바람찻집, 또 가요", 1),
+                        ("솔바람찻집은요 좋아요", 0), ("솔바람찻집에서도 좋아요", 0), ("새솔바람찻집 좋아요", 0)):
+            self.assertEqual(self.gn(req(text, title="제목"), need=1)["actual"], n, text)
+
+    def test_text_paste_reads_tag_area_and_folded_tags(self):
+        text = "글 처음이에요 솔바람찻집 좋아요.\n\n#솔바람찻집\n#다른태그\n+3"
+        r = self.gn(req(text, input_mode="text", counts_source="user", title="솔바람찻집 후기"))
+        self.assertEqual((r["status"], r["actual"]), ("kept", 3))
+        self.assertIn("제목 1 + 본문 1 + 태그 칸 1", r["note"])
+        r = self.gn(req(text, input_mode="text", counts_source="user", title="솔바람찻집 후기"), need=5)
+        self.assertEqual(r["status"], "hold")                       # 모자라지만 접힌 태그 3개를 못 셌어요
+        self.assertIn("접힌 태그 3개", r["note"])
+        r = self.gn(req(text.replace("\n+3", ""), input_mode="text", counts_source="user", title="솔바람찻집 후기"), need=5)
+        self.assertEqual(r["status"], "missing")                    # 접힌 태그가 없으면 빠짐
+
+    def test_each_free_keyword_and_title_unknown(self):
+        r = self.gn(req("다른태그 글.", title=None, tag_area=["#솔바람찻집"]), need=3, pick="each")
+        self.assertEqual((r["status"], r["actual"]), ("hold", 1))  # 제목을 몰라서 판단 보류
+        r = self.gn(req("솔바람찻집 글. 솔바람찻집이 좋아요.", title="솔바람찻집", tag_area=["#솔바람찻집"]),
+                    pick="each", keywords=[self.K, "달빛차"])
+        self.assertEqual(r["status"], "missing")
+        self.assertIn("기준보다 적은 키워드", r["note"])
+        self.assertIn('"달빛차" 0회', r["note"])
+
+    def test_tips_still_work_for_missing(self):
+        out = run(cond("keyword_count", {"keywords": [self.K], "min": 9, "pick": "any", "scope": "title_body_tags"}),
+                  req(self.TEXT, title="솔바람찻집 후기", tag_area=self.TAGS))
+        self.assertEqual(out["results"][0]["status"], "missing")
+        self.assertIsInstance(out.get("tips", []), list)
+
+    def test_map_strict_false_holds_instead_of_missing(self):
+        text = "가나다라마바사아자차\n[지도]\n그 뒤의 글이에요"
+        request = req(text, has_map=True, media=[{"kind": "map", "start": text.index("[지도]")}])
+        self.assertEqual(one("map", {"position": "bottom"}, request)["status"], "missing")
+        r = one("map", {"position": "bottom", "strict": False}, request)
+        self.assertEqual(r["status"], "hold")
+        self.assertIn("확인해 주세요", r["note"])
