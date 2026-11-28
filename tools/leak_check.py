@@ -140,8 +140,12 @@ def collect(private: Path, allow: set[str] = frozenset()) -> tuple[set[str], set
     - 고유 낱말(짧아도 막아요): 작성자 이름(프로필 다음 줄, "・" 앞, [출처]의 작성자), 원문 속 도메인과 @아이디."""
     seen: dict[str, set[str]] = {}
     words: set[str] = set()
+    same: set[str] = set()
     for f in source_files(private):
         text = f.read_text(encoding="utf-8", errors="replace")
+        if flat(text) in same:          # 같은 글을 다른 폴더에 복사해 둔 파일은 한 번만 세요 (2026-11-28).
+            continue                    # 두 번 세면 "여러 글에 나오는 흔한 구절"로 보고 막지 않게 돼요
+        same.add(flat(text))
         case = case_of(private, f)
         for piece in shingles(text, allow):
             seen.setdefault(piece, set()).add(case)
