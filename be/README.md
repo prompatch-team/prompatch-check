@@ -7,7 +7,7 @@
 
 ## 실행 (API 키 없이)
 
-1. 설치: `pip install -r be/requirements.txt` / 테스트: `python -m unittest be.test_engine be.test_recorded`
+1. 설치: `pip install -r be/requirements.txt` / 테스트: 저장소 맨 위에서 `python -m unittest` (모든 영역 테스트를 한 번에 돌려요)
 2. 엔진만 한 번: `python -m be contracts/conditions.example.json contracts/check-request.example.json`
 3. 서버: `python -m uvicorn be.server:app --port 8000` (`ai/` 코드가 없거나 `.env`에 `PROMPATCH_AI_MODE=recorded`면 `samples/`의 예시 가이드 4개만 읽는 저장된 응답 모드예요)
 
