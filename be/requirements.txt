@@ -1,0 +1,5 @@
+# -*- coding: utf-8 -*-
+# 2026-11-26에 설치해 확인한 버전이에요. AI 쪽은 ai/requirements.txt에 있어요.
+fastapi==0.165.0
+uvicorn==0.54.0
+jsonschema==4.26.0
