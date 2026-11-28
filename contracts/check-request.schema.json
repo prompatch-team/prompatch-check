@@ -1,25 +1,51 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "점검 요청 (연결 ②, owner 리릭)",
+  "title": "점검 요청 (연결 ②) 0.3",
+  "description": "기준은 tools/paste-test.html이 내는 JSON. 모든 위치(start)는 draft_text의 글자 위치(코드 포인트, 이모지 1개 = 1글자)",
   "type": "object",
   "required": [
     "version",
-    "guide_text",
-    "draft_text"
+    "draft_text",
+    "input_mode",
+    "counts_source"
   ],
   "properties": {
     "version": {
-      "type": "string"
+      "const": "0.3"
     },
-    "guide_text": {
-      "type": "string",
-      "minLength": 1
+    "input_mode": {
+      "enum": [
+        "html",
+        "text"
+      ],
+      "description": "html: 에디터 서식을 읽음. text: 글만 붙여 넣고 숫자는 블로거가 입력"
+    },
+    "counts_source": {
+      "enum": [
+        "parsed",
+        "user"
+      ],
+      "description": "사진 수·동영상 수·지도 여부(photo_count, video_count, has_map)가 어디서 왔는지. parsed: 서식에서 자동으로 센 값. user: 블로거가 고치거나 직접 넣은 값. input_mode가 text이면 user여야 함"
+    },
+    "title": {
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "draft_text": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "본문 글만. 스마트에디터 서식이면 글 블록(se-module-text) 안의 글만 넣음. 제목, 지도, 링크 카드, 동영상 안의 글, 보기 화면 머리·꼬리와 맨 아래 태그 칸은 넣지 않음. 사진 등 미디어 자리는 [사진] [동영상] [지도] 줄로 표시"
     },
     "photo_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "video_count": {
       "type": [
         "integer",
         "null"
@@ -31,7 +57,119 @@
         "boolean",
         "null"
       ]
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "start": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "본문 안 링크와 링크 카드. 같은 주소는 판정할 때 1개로 셈"
+    },
+    "hashtags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "media": {
+      "type": "array",
+      "description": "서식에서 찾은 미디어와 draft_text 안 위치(코드 포인트). 그 자리의 [사진] [동영상] [지도] 줄 시작을 가리킴",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "start"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "photo",
+              "video",
+              "map"
+            ]
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "captions": {
+      "type": "array",
+      "description": "없어도 됨. 사진 설명(캡션) 글이 draft_text의 어디에 있는지(코드 포인트, end 미포함). 서식에서 se-caption 글 블록을 찾았을 때만 채움. 글자 수에 넣을지는 서버 설정(PROMPATCH_COUNT_CAPTIONS, 기본 넣음)",
+      "items": {
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "properties": {
+          "start": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "count_captions": {
+      "type": "boolean",
+      "description": "없어도 됨. 사진 설명(captions)을 글자 수에 넣을지 (화면의 설정). 없으면 서버 설정(PROMPATCH_COUNT_CAPTIONS, 기본 넣음)"
+    },
+    "banner_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "없어도 됨. 서식에서 걸러 낸 체험단 배너 그림 수(사진 수에는 넣지 않음). null = 그림을 못 봄(글만 붙여 넣음)"
+    },
+    "banner_top": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "없어도 됨. 체험단 배너가 글 맨 위(첫 사진 블록이나 첫 3블록 안)에 있는지. 대가성 표시로 봐요. null = 그림을 못 봄. input_mode가 html인데 없으면 false로 봐요"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "if": {
+    "properties": {
+      "input_mode": {
+        "const": "text"
+      }
+    },
+    "required": [
+      "input_mode"
+    ]
+  },
+  "then": {
+    "properties": {
+      "counts_source": {
+        "const": "user"
+      }
+    }
+  }
 }

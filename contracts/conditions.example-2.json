@@ -1,0 +1,240 @@
+{
+  "version": "0.3",
+  "guide_id": "sample-badasoop",
+  "platform": "reviewplace",
+  "campaign_type": null,
+  "conditions": [
+    {
+      "id": "c1",
+      "type": "title_keyword",
+      "label": "제목에 키워드 1개 (녹차스틱/바다숲녹차/간편녹차)",
+      "countable": true,
+      "params": {
+        "keywords": [
+          "녹차스틱",
+          "바다숲녹차",
+          "간편녹차"
+        ],
+        "pick": "any"
+      },
+      "guide_quote": {
+        "text": "# 키워드 중 1개를 선택하여 제목 및 #태그에 넣어주세요.",
+        "start": 149,
+        "end": 182
+      }
+    },
+    {
+      "id": "c2",
+      "type": "hashtag",
+      "label": "#태그에 키워드 1개 (녹차스틱/바다숲녹차/간편녹차)",
+      "countable": true,
+      "params": {
+        "tags": [
+          "#녹차스틱",
+          "#바다숲녹차",
+          "#간편녹차"
+        ],
+        "pick": "any"
+      },
+      "guide_quote": {
+        "text": "# 키워드 중 1개를 선택하여 제목 및 #태그에 넣어주세요.",
+        "start": 149,
+        "end": 182
+      }
+    },
+    {
+      "id": "c3",
+      "type": "keyword_count",
+      "label": "본문 키워드 1개를 4번 이상",
+      "countable": true,
+      "params": {
+        "keywords": [
+          "녹차스틱",
+          "바다숲녹차",
+          "간편녹차",
+          "사무실차"
+        ],
+        "min": 4,
+        "pick": "any",
+        "scope": "body"
+      },
+      "guide_quote": {
+        "text": "# 키워드 중 1개를 선택하여 본문에 4번 이상 넣어주세요.",
+        "start": 217,
+        "end": 250
+      }
+    },
+    {
+      "id": "c4",
+      "type": "disclosure",
+      "label": "대가성 문구를 리뷰 상단에",
+      "countable": true,
+      "params": {
+        "phrase": null,
+        "position": "top"
+      },
+      "guide_quote": {
+        "text": "공정위 대가성 문구는 반드시 리뷰 상단에 기재해주세요.",
+        "start": 259,
+        "end": 289
+      }
+    },
+    {
+      "id": "c5",
+      "type": "exact_phrase",
+      "label": "제목의 제품명은 '바다숲 녹차'로",
+      "countable": true,
+      "params": {
+        "allowed": "바다숲 녹차",
+        "forbidden": [
+          "바다숲 녹차 스틱"
+        ],
+        "scope": "title"
+      },
+      "guide_quote": {
+        "text": "포스팅 제목에 제품명을 언급할 경우, 반드시 '바다숲 녹차'로 작성해주세요. ('바다숲 녹차 스틱' x)",
+        "start": 293,
+        "end": 351
+      }
+    },
+    {
+      "id": "c6",
+      "type": "banned_terms",
+      "label": "'효능', '효과' 쓰지 않기",
+      "countable": true,
+      "params": {
+        "terms": [
+          "효능",
+          "효과"
+        ],
+        "category": null,
+        "scope": "title_and_body"
+      },
+      "guide_quote": {
+        "text": "'효능', '효과' 단어는 사용하지 말아주세요.",
+        "start": 355,
+        "end": 381
+      }
+    },
+    {
+      "id": "c7",
+      "type": "required_phrase",
+      "label": "원료 문장 아래 안내 문구",
+      "countable": true,
+      "params": {
+        "phrase": "*제품이 아닌 원료에 관한 내용입니다",
+        "scope": "body",
+        "after": "원료 특징 문장"
+      },
+      "guide_quote": {
+        "text": "원료 특징을 적는 문장 아래에는 \"*제품이 아닌 원료에 관한 내용입니다\" 문구를 넣어주세요.",
+        "start": 385,
+        "end": 436
+      }
+    },
+    {
+      "id": "c8",
+      "type": "hashtag",
+      "label": "필수 해시태그 #바다숲녹차",
+      "countable": true,
+      "params": {
+        "tags": [
+          "#바다숲녹차"
+        ],
+        "pick": "each"
+      },
+      "guide_quote": {
+        "text": "필수 해시태그 #바다숲녹차 를 넣어주세요.",
+        "start": 440,
+        "end": 463
+      }
+    },
+    {
+      "id": "c9",
+      "type": "photo_count",
+      "label": "사무실 책상 위 제품 사진 1장 이상",
+      "countable": false,
+      "params": {
+        "min": 1,
+        "subject": "사무실 책상 위에서 찍은 제품"
+      },
+      "guide_quote": {
+        "text": "사무실 책상 위에서 찍은 제품 사진을 1장 이상 넣어주세요.",
+        "start": 467,
+        "end": 500
+      }
+    },
+    {
+      "id": "c10",
+      "type": "link",
+      "label": "링크 삽입",
+      "countable": true,
+      "params": {
+        "min": 1,
+        "url": null
+      },
+      "guide_quote": {
+        "text": "링크 삽입",
+        "start": 513,
+        "end": 518
+      }
+    },
+    {
+      "id": "c11",
+      "type": "length",
+      "label": "1,000자 이상",
+      "countable": true,
+      "params": {
+        "min": 1000,
+        "count_spaces": null
+      },
+      "guide_quote": {
+        "text": "1,000자 이상",
+        "start": 519,
+        "end": 528
+      }
+    },
+    {
+      "id": "c12",
+      "type": "photo_count",
+      "label": "사진 15장 이상",
+      "countable": true,
+      "params": {
+        "min": 15
+      },
+      "guide_quote": {
+        "text": "15장 이상",
+        "start": 529,
+        "end": 535
+      }
+    },
+    {
+      "id": "c13",
+      "type": "video_count",
+      "label": "동영상 첨부",
+      "countable": true,
+      "params": {
+        "min": 1
+      },
+      "guide_quote": {
+        "text": "동영상 첨부",
+        "start": 536,
+        "end": 542
+      }
+    },
+    {
+      "id": "c14",
+      "type": "outside_draft",
+      "label": "리뷰 등록기간 12.02 ~ 12.09",
+      "countable": false,
+      "params": {
+        "what": "기간"
+      },
+      "guide_quote": {
+        "text": "리뷰 등록기간 12.02 ~ 12.09",
+        "start": 597,
+        "end": 618
+      }
+    }
+  ]
+}

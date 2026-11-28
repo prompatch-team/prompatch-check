@@ -5,7 +5,7 @@
     python contracts/validate.py conditions  내파일.json
     python contracts/validate.py check-request 내파일.json
     python contracts/validate.py check-result  내파일.json
-파일을 안 주면 예시 파일(*.example.json)을 확인해요.
+파일을 안 주면 그 종류의 예시 파일(<종류>.example*.json)을 전부 확인해요.
 """
 import json
 import sys
@@ -31,15 +31,21 @@ def check(kind: str, path: Path) -> int:
     return 1
 
 
+def examples(kind: str) -> list[Path]:
+    return sorted(HERE.glob(f"{kind}.example*.json"))
+
+
 def main() -> int:
+    kinds = KINDS
     if len(sys.argv) >= 2:
         kind = sys.argv[1]
         if kind not in KINDS:
             print(f"종류는 {', '.join(KINDS)} 중 하나예요")
             return 2
-        path = Path(sys.argv[2]) if len(sys.argv) >= 3 else HERE / f"{kind}.example.json"
-        return check(kind, path)
-    return max(check(k, HERE / f"{k}.example.json") for k in KINDS)
+        if len(sys.argv) >= 3:
+            return check(kind, Path(sys.argv[2]))
+        kinds = (kind,)
+    return max(check(k, p) for k in kinds for p in examples(k))
 
 
 if __name__ == "__main__":

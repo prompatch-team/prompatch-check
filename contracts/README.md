@@ -1,47 +1,161 @@
-# 연결 형식 (contracts)
+# 연결 형식 (contracts) 0.3
 
-영역 사이에 주고받는 JSON의 약속이에요. 지금 파일은 **초안(0.1-draft)**이고, 11/25 회의에서 owner가 고쳐 확정해요.
+영역 사이에 주고받는 JSON의 약속이에요. 0.3은 지금 실제로 돌아가는 점검이 주고받는 값을 전부 담은 판이에요. 전 판에서 바뀐 점은 `CHANGELOG.md`에 있어요.
 
 | 연결 | 누가 → 누구 | 파일 | owner |
 | --- | --- | --- | --- |
-| ① 조건 목록 | AI → BE | `conditions.schema.json`, `conditions.example.json` | 훈 |
+| ① 조건 목록 | AI → BE | `conditions.schema.json`, `conditions.example.json`, `conditions.example-2.json`, `-3.json`, `-4.json` | 훈 |
 | ② 점검 요청 | FE → BE | `check-request.schema.json`, `check-request.example.json` | 리릭 |
 | ② 점검 결과 | BE → FE | `check-result.schema.json`, `check-result.example.json` | 리릭 |
 
-예시 파일은 `samples/`의 지어낸 가이드·원고로 만들었어요. 숫자는 `criteria/sample-answer-key.md`와 같아요.
+- 세 형식 모두 `version`은 `"0.3"`이어야 해요. 다른 값이면 형식 오류예요.
+- `*.example.json`(번호 없는 것 셋)은 `samples/guide-sample.md` + `samples/draft-sample.md`에서 나온 한 묶음이에요. 숫자는 `criteria/sample-answer-key.md`와 같아요.
+- `conditions.example-2.json`: `samples/guide-sample-2.md`(리뷰플레이스 형식). 조건 종류가 거의 다 들어 있는 **형식 예시**예요. 정답지가 아니에요.
+- `conditions.example-3.json`: `samples/guide-04.md`. 링크 조건이 가이드 두 곳에서 나와서 `extra_quotes`가 들어 있어요.
+- `conditions.example-4.json`: `samples/guide-05.md`. 코드가 확인하지 못한 조건(`params.unverified`)이 하나 들어 있어요.
+
+확인: `python contracts/validate.py` (예시 전부) 또는 `python contracts/validate.py <종류> <파일>`
+
+## 공통 규칙
+
+- **상태**는 `kept`(지킴), `missing`(빠짐), `hold`(판단 보류) 셋뿐이에요.
+- **글자 위치(`start`, `end`)**는 코드 포인트로 세요. 이모지 1개가 1글자예요. 파이썬은 문자열 위치 그대로, JS는 `Array.from(글)`으로 나눈 뒤의 위치예요 (JS의 `글.length`와 다를 수 있어요). `end`는 포함하지 않아요.
+- **글자 수**는 "네이버 블로그 본문 글 블록에 쓴 글자"예요. 본문(`draft_text`)만 세요. 제목, 지도, 링크 카드, 동영상 안의 글은 `draft_text`에 넣지 않으니 세지 않아요. `[사진]`, `[동영상]`, `[지도]` 줄도 빼고 세요.
+  - 서식(HTML)이 있고 스마트에디터 글 블록(`se-module-text`)이 있으면, 화면이 글 블록 안의 글만 `draft_text`에 넣어요. 글 중간에 직접 쓴 `#해시태그`와 주소도 글 블록이라 세요. 보기 화면 머리·꼬리, 맨 아래 태그 칸, 링크 카드 안 제목·설명·도메인, 동영상 제목, 슬라이드 단추 글자는 빠져요.
+  - 글만 붙여 넣었으면(`input_mode: "text"`) 보기 화면에서 딸려 온 줄(제목·작성자·태그 목록·링크 카드 글·동영상 제목 등)을 규칙으로 빼서 최대한 같게 맞추고, 결과에 "글자만으로 센 값"이라고 적어요.
+  - 네이버 글쓰기 화면에서 복사할 때 딸려 오는 편집 화면 줄("대표사진 삭제", "AI 활용 설정", "사진 설명을 입력하세요." 등)도 빼요. 줄 전체가 같을 때만이에요.
+  - 숨은 문자(U+FEFF, U+200B, U+2060)와 `\r`은 글자 수에 넣지 않아요. 자모가 나뉜 한글(NFD)은 합친 글자로 세요. 위치(`draft_spans`)는 받은 `draft_text` 그대로의 위치예요.
+  - 공백 제외: 공백과 줄바꿈을 모두 뺀 글자 수.
+  - 공백 포함: 문단 안의 글자와 띄어쓰기만 세요. 줄바꿈, 빈 줄, 줄 앞뒤 공백은 세지 않아요. 그래서 글쓰기 화면, 보기 화면, 글만 붙여 넣기 어디서 복사해도 같은 값이에요.
+  - 결과의 `note`에는 공백 포함과 공백 제외를 늘 같이 적어요. 가이드가 기준을 정했으면 그 기준으로, 정하지 않았으면(`count_spaces: null`) **공백 포함**으로 판정해요.
+  - 사진 설명(캡션)은 기본으로 세요. 요청의 `count_captions`가 `false`면 빼요.
+- **키워드 횟수**는 정확히 같은 문자열을 겹치지 않게 앞에서부터 세요. 본문에 직접 쓴 `#해시태그` 안의 키워드도 세고, `note`에 "본문 글 N번 + 해시태그 M번"으로 나눠 적어요. 해시태그로만 기준을 채웠으면 그렇게 알려요(판정은 지킴). 맨 아래 태그 칸은 `draft_text`에 없어서 세지 않아요.
+- **링크**는 주소 기준으로 세요. 같은 주소가 글자 링크와 링크 카드로 두 번 나와도 1개예요. `link` 조건과 원칙 점검 p4 모두 같아요.
+- 공식 숫자가 없는 기준은 `note`에 "우리 기준"이라고 적어요.
 
 ## 조건 목록 (연결 ①)
 
-조건마다 `id`, `type`, `label`, `countable`, `params`, `guide_quote`(가이드 원문과 위치)가 있어요.
+맨 위 값:
 
-| type | 뜻 | params 예 |
+| 필드 | 뜻 |
+| --- | --- |
+| `version` | `"0.3"` |
+| `guide_id` | 없어도 돼요. 가이드를 가리키는 이름 |
+| `platform` | 리뷰플레이스 형식이면 `"reviewplace"`, 아니면 `null`. 지금 코드는 이 두 값만 채워요. 레뷰·강남맛집·리뷰노트까지 알아본 값은 아래 "조건 뽑기 주소"의 `form`으로 가요 |
+| `campaign_type` | `"체험"`, `"기자단"`, 모르면 `null`. 기자단이면 원칙 점검 p6이 켜져요 |
+| `conditions` | 조건 목록 |
+
+조건마다:
+
+| 필드 | 뜻 |
+| --- | --- |
+| `id`, `type`, `label`, `countable`, `params` | 조건 번호, 종류(아래 표), 이름, 코드로 셀 수 있는지, 종류마다 다른 값 |
+| `guide_quote` | 가이드 원문과 글자 위치(`text`, `start`, `end`). `text`는 가이드 원문에 그대로 있어야 해요. 없으면 그 조건은 버려요 |
+| `extra_quotes` | 없어도 돼요. 같은 조건을 말하는 다른 가이드 원문(구매 링크 줄과 리뷰어 미션의 "링크 삽입"). `guide_quote`와 같은 모양의 목록 |
+| `source` | 없어도 돼요. `"rule"`: 코드가 가이드의 고정 칸에서 직접 읽어 만든 조건. `"ai"` 또는 생략: AI가 뽑고 코드가 확인한 조건 |
+
+| type | 뜻 | params 예 | 판정 |
+| --- | --- | --- | --- |
+| `title_keyword` | 제목 키워드 | `{"keywords": ["녹차스틱", "바다숲녹차"], "pick": "any"}` | 코드 |
+| `keyword_count` | 본문 키워드 N회 | `{"keywords": [...], "min": 4, "pick": "any", "scope": "body"}` | 코드 |
+| `length` | 본문 글자 수 | `{"min": 1000, "count_spaces": false}` (`null` = 가이드가 안 정함 → 공백 포함으로 판정, 둘 다 표시) | 코드 |
+| `photo_count` | 사진 수 | `{"min": 15}`. 상한이 있으면 `"max": 30`, 동영상도 장수에 넣는 가이드면 `"include_video": true`. 특정 내용의 사진("책상 위 제품 사진 1장")은 `{"min": 1, "subject": "..."}`이고 `countable: false` | 코드 |
+| `video_count` | 동영상 수 | `{"min": 1}` | 코드 |
+| `link` | 링크 | `{"min": 1, "url": null}` | 코드 |
+| `map` | 지도 | `{"position": "bottom"}` (`null` = 위치 무관) | 코드 |
+| `hashtag` | 해시태그 | `{"tags": ["#바다숲녹차"], "pick": "each"}` (`pick`이 없으면 `each`) | 코드 |
+| `exact_phrase` | 정확한 표기 | `{"allowed": "바다숲 녹차", "forbidden": ["바다숲 녹차 스틱"], "scope": "title"}` | 코드 |
+| `banned_terms` | 금지어 | `{"terms": ["효능", "효과"], "category": null, "scope": "title_and_body"}` (`category`만 있으면 `countable: false`) | 코드 / 판단 보류 |
+| `required_phrase` | 필수 문구 | `{"phrase": "*제품이 아닌 원료에 관한 내용입니다", "scope": "body", "after": "원료 특징 문장"}` (`after`는 판단 보류) | 코드 |
+| `disclosure` | 대가성 문구 | `{"phrase": null, "position": "top"}` (`phrase`가 없으면 대가성 표현 목록으로 찾기. 문구를 정하지 않았으면 맨 위 체험단 배너도 대가성 표시로 봐요) | 코드 |
+| `outside_draft` | 원고 밖 조건 | `{"what": "기간"}` | 표시만 |
+| `judgment` | 셀 수 없는 조건 | `{"question": "다른 브랜드와 비교하는 내용이 없는가"}` | `hold`. `note`에 "이 조건은 직접 확인해 주세요". 화면에서 켰을 때만 AI가 참고용으로 판단해요 |
+
+- `pick` (`title_keyword`, `keyword_count`, `hashtag`):
+  - `any` = 목록 중 하나라도 기준을 넘으면 지킴. `each` = 모두 넘어야 지킴.
+  - `sum` (`keyword_count`만) = 고른 키워드의 합계로 세요 ("키워드 중 1개 이상을 선택하여 총 5회 이상").
+  - `both` = 가이드가 "전부"인지 "하나 이상"인지 말하지 않았을 때. 두 해석의 결과를 `note`에 같이 적고 "가이드 기준 확인 필요". 둘 다 지킴이면 지킴, 둘 다 빠짐이면 빠짐, 다르면 판단 보류.
+- 제목 키워드의 `pick`은 가이드 문장으로 정해요: "선택", "택1", "~ 중", "1개 이상" → `any` / `[필수]` 표시 → 필수 키워드만 `each` / 아무 말 없이 3개 이하 → `each` / 아무 말 없이 4개 이상 → `both`.
+- "키워드 중 1개를 선택하여 제목 및 #태그에 넣어주세요" 같은 가이드는 조건 두 개로 뽑아요: `title_keyword` 하나와 `hashtag`(`pick: any`) 하나. 둘 다 같은 `guide_quote`를 써요 (`conditions.example-2.json`의 c1, c2).
+- `scope`: `title`, `body`, `title_and_body`
+- `params.free` (`keyword_count`): `true`면 블로거가 직접 고르는 자율 키워드예요. `keywords`는 비어 있어도 되고, 비어 있으면 판단 보류 "자율 키워드를 적어 주시면 함께 셀게요".
+- `params.needs_review`: `true`면 "기준 숫자를 코드가 인용 문구에서 확인하지 못했다"는 뜻이에요 (가이드에 "다섯 번"처럼 한글로 적혀 있음). 조건은 남기고, 화면에서 블로거가 숫자를 확인·수정하면 이 값을 지워요. 지우지 않은 채 점검하면 그 숫자로 판정하되 `note`에 확인이 필요하다고 적어요.
+- `params.unverified`: `true`면 AI가 낸 조건을 코드가 확인하지 못해 버렸고, 그 자리에 "조건 하나를 확인하지 못했어요. 가이드의 이 부분을 직접 봐 주세요" 안내로 남긴 조건이에요. `type`은 `judgment`라서 판단 보류로 세요. `guide_quote`는 코드가 가이드에서 찾은 줄이고, 못 찾았으면 빈 글자(`start` = `end` = 0)예요.
+- 기준 숫자(`min`)가 없으면 1 같은 값을 지어내지 않고 판단 보류예요.
+
+### 조건 뽑기 주소가 주고받는 것 (`POST /api/extract`)
+
+조건 목록을 감싸서 주고받는 값이에요. 스키마 파일은 따로 없어요.
+
+| 방향 | 필드 | 뜻 |
 | --- | --- | --- |
-| `keyword_count` | 키워드 횟수 | `{"keyword": "전포동 카페", "min": 5}` |
-| `length` | 글자 수 | `{"min": 450, "count_spaces": false}` |
-| `photo_count` | 사진 수 | `{"min": 10}` |
-| `disclosure` | 대가성 문구 | `{"phrase": "...", "position": "top"}` |
-| `map` | 지도 첨부 | `{"position": "bottom"}` |
-| `judgment` | 셀 수 없는 조건 | `{"question": "매장 분위기 언급이 있는가"}` |
+| 보냄 | `guide` | 붙여 넣은 가이드 글 |
+| 보냄 | `ai` | 없어도 돼요. `false`면 AI 없이 코드가 고정 칸에서 읽은 조건만 바로 돌려줘요 (화면이 먼저 보여 주는 1단계) |
+| 보냄 | `form` | 없어도 돼요. 블로거가 고른 가이드 형식: `reviewplace`, `revu`, `gangnam`, `reviewnote`, `general`(일반). 없으면 코드가 가이드의 칸 이름으로 알아봐요 |
+| 받음 | `conditions` | 조건 목록 (위 형식) |
+| 받음 | `dropped` | 버린 조건 목록. `{code, reason, type, label, quote}`. 화면은 안내로만 보여 줘요 |
+| 받음 | `form` | 읽은 가이드 형식: `reviewplace`, `revu`, `gangnam`, `reviewnote`, 일반이면 `null` |
 
-`countable: false`인 조건은 1주차에 판단하지 않고 `hold`로 돌려줘요.
+## 점검 요청 (연결 ②)
 
-## 점검 요청과 결과 (연결 ②)
+화면(`fe/`)이 붙여 넣은 글을 읽어서 만드는 JSON이에요.
 
-- 요청: `guide_text`, `draft_text`, `photo_count`(블로거가 입력한 사진 수), `has_map`
-- 결과: `summary`(지킴·빠짐·판단 보류 개수)와 조건마다 `status`, `expected`, `actual`, `unit`, `note`, `draft_spans`(원고 안 위치)
+| 필드 | 뜻 |
+| --- | --- |
+| `input_mode` | `html`(에디터 서식을 읽음) 또는 `text`(글만 붙여 넣고 숫자는 블로거가 입력) |
+| `counts_source` | 사진 수·동영상 수·지도 여부가 어디서 왔는지. `parsed` = 서식에서 자동으로 센 값, `user` = 블로거가 고치거나 직접 넣은 값. `input_mode`가 `text`인데 `parsed`이면 형식 오류예요 |
+| `title` | 제목. 화면의 제목 칸에 블로거가 적은 값이 먼저이고, 없으면 붙여 넣은 글에서 찾은 제목, 그래도 모르면 `null` → 제목 조건은 판단 보류. 빈 글자(`""`)로 보내지 않아요 |
+| `draft_text` | 본문 글만. 제목, 지도, 링크 카드, 동영상 안의 글은 넣지 않아요. 미디어 자리는 `[사진]`, `[동영상]`, `[지도]` 줄로 표시 |
+| `photo_count`, `video_count`, `has_map` | 서식에서 셌거나 블로거가 입력한 값. 모르면 `null` → 해당 조건은 `hold`. 단, `photo_count`가 `null`이어도 `draft_text`에 "대표사진 삭제"·"대표사진 설정" 줄이 있으면 그 줄 수로 판정하고 `note`에 적어요 |
+| `links` | `[{ "url": "...", "start": 위치 또는 null }]` 본문 안 링크와 링크 카드. 본문에 글자가 없는 링크(카드 등)는 `start`가 `null`. 같은 주소가 여러 번 들어 있어도 되고, 셀 때 1개로 세요 |
+| `hashtags` | `["#..."]` 본문과 맨 아래 태그 칸에서 찾은 태그 |
+| `media` | `[{ "kind": "photo", "start": 위치 }]` 서식에서 찾은 미디어의 본문 안 위치 (그 자리 표시 줄의 시작) |
+| `captions` | 없어도 돼요. 사진 설명(캡션) 글의 `draft_text` 안 자리(`start`, `end`) 목록. 서식에서 `se-caption` 글 블록을 찾았을 때만 채워요. 키워드 찾기에는 늘 들어가요 |
+| `count_captions` | 없어도 돼요. 사진 설명을 글자 수에 넣을지(참/거짓). 화면의 "설정"에서 정해요. 없으면 서버 설정(`PROMPATCH_COUNT_CAPTIONS`, 기본 넣음)을 써요 |
+| `banner_count` | 없어도 돼요. 서식에서 걸러 낸 체험단 배너 그림 수예요. 사진 수(`photo_count`)에는 넣지 않아요. 글만 붙여 넣으면 `null`(그림을 못 봄) |
+| `banner_top` | 없어도 돼요. 체험단 배너가 글 맨 위(첫 사진 블록이나 첫 3블록 안)에 있는지예요. 있으면 대가성 표시로 봐요. `null` = 그림을 못 봄. 서식(html)인데 이 값이 없으면 `false`로 봐요 |
 
-상태는 `kept`(지킴), `missing`(빠짐), `hold`(판단 보류) 셋뿐이에요.
+## 점검 결과 (연결 ②)
 
-## 형식을 바꿀 때
+- `summary`: 가이드 조건(`results`)의 지킴·빠짐·판단 보류 개수. 원고 밖 조건(`outside_draft`)은 `results`에는 있지만 이 개수에서는 빼요. 화면은 "원고 밖에서 확인할 것 N개"로 따로 보여 줘요
+- `results`: 조건마다 `status`, `expected`, `actual`, `unit`, `note`, `draft_spans`
+- `principles`: 원칙 점검. `missing` = 네이버·공정위가 불리하다고 밝힌 패턴을 찾음. `basis`에 근거를 적어요
+- `tips`: 없어도 돼요. 도움이 될 팁 (아래)
+- `draft_spans`의 `field`: `title` 또는 `body`(기본). 한 항목이 돌려주는 위치는 앞에서부터 200곳까지예요
 
-1. owner가 스키마와 예시를 같이 고치고 `version`을 올려요.
-2. `python contracts/validate.py`로 예시가 통과하는지 확인해요.
-3. PR 제목에 `[연결 ①]` 또는 `[연결 ②]`를 붙이고, 영향받는 사람을 리뷰어로 넣어요.
+### 원칙 점검 (`principles`)
 
-## 확인하기
+| rule_id | 내용 | 기준 |
+| --- | --- | --- |
+| p1 | 대가성 표시가 제목 또는 첫 부분에 있음 | 첫 부분 = 본문 첫 문단 (우리 기준). 맨 위 체험단 배너(`banner_top`)도 대가성 표시로 봐요. 글만 붙여 넣어 그림을 못 보면 없다고 하지 않고 판단 보류 |
+| p2 | 모호한 대가성 표현 없음 | "수수료를 지급받을 수 있음" 같은 조건부 표현 목록 |
+| p3 | 키워드 과다 반복 없음 | 가이드 요구 횟수의 2배 초과, 또는 이어진 두 문장에 같은 키워드 반복 (우리 기준). 해시태그 안의 키워드는 반복으로 치지 않아요 |
+| p4 | 외부 링크 과다 없음 | 가이드 필수 링크 밖의 링크가 3개 초과 (우리 기준) |
+| p5 | 사진에 비해 글이 충분함 | 사진 1장당 공백 제외 30자 미만이면 알림 (우리 기준) |
+| p6 | 기자단의 체험 표현 | 조건 목록의 `campaign_type`이 `"기자단"`일 때만 결과에 나와요. 기본 `hold` |
+| p7 | 참고: "AI 활용" 표시 | 본문에 "AI 활용" 표시 줄이 있고 가이드에 생성형 AI 금지 조건이 없을 때만 나와요. `hold`. 금지 조건이 있으면 그 조건 결과의 `note`와 위치에 붙여요 (우리 기준, 공식 근거 아님) |
 
-```bash
-pip install jsonschema
-python contracts/validate.py                       # 예시 세 개 모두
-python contracts/validate.py conditions out.json   # 내가 만든 파일
-```
+### 도움이 될 팁 (`tips`)
+
+핵심 점검이 아니라 블로거에게 도움이 될 팁이에요. 키워드 배치, 띄어쓰기처럼 비슷한 안내는 앞으로도 여기에 넣어요.
+
+- 판정과 따로예요. `results`, `principles`, `summary`를 바꾸지 않아요. 화면은 결과 아래에 접어 두고, 펼쳤을 때만 원고에 차분한 색으로 표시해요.
+- 문장을 통째로 써 주지 않아요 (가이드에 "생성형 AI 이용 불가"가 흔해요). 위치(`draft_spans`)와, 빈칸(○○)이 있는 짧은 고정 틀(`templates`)만 줘요. 틀은 문장 끝이 없는 조각이에요.
+- `note`는 권하는 말로 써요 ("이렇게 하면 더 자연스러워요"). 고르는 기준은 모두 우리 기준이에요.
+- 코드 규칙으로만 만들어요. AI를 부르지 않아요.
+
+| 필드 | 뜻 |
+| --- | --- |
+| `tip_id` | `t1`, `t2` … |
+| `kind` | 팁 종류 (아래 표). 종류는 늘어날 수 있어요. 화면은 모르는 종류도 같은 모양으로 보여 줘요 |
+| `condition_id` | 이 팁이 나온 조건. 조건과 상관없는 팁이면 생략 |
+| `label`, `note` | 한 줄 이름과 설명 |
+| `templates` | 짧은 틀 목록. 없으면 빈 목록 |
+| `draft_spans` | 원고 안 자리. `results`와 같은 모양 |
+
+| kind | 언제 | 무엇을 |
+| --- | --- | --- |
+| `keyword_place` | 본문 키워드 조건(`keyword_count`)이 빠짐일 때만 | 키워드가 어울리는 문단 1~2곳(지역 이름, "다녀왔"·"찾다가"·"추천" 같은 낱말, 첫·끝 문단)과 짧은 틀 2~3개. 키워드가 이미 있는 문단과 그 문장 바로 옆 문장은 빼요 (p3에 걸리지 않게). `pick`이 `each`면 모자란 키워드마다(3개까지), 아니면 기준에 가장 가까운 키워드 하나 |
+| `keyword_spacing` | 키워드 조건(`keyword_count`, `title_keyword`)이 빠짐이고, 띄어쓰기만 다른 형태가 원고에 있을 때 | 그 자리. "부산맛집"을 "부산 맛집"으로 쓴 곳 → "붙여 써야 키워드로 세져요". 띄어 쓴 곳만 고쳐도 기준이 채워지면 `keyword_place`는 내지 않아요 |
+
+판단 보류인 조건(제목을 모름, 자율 키워드가 비어 있음, 기준 숫자가 없음)에는 팁을 내지 않아요. 팁은 한 번에 10개까지예요 (우리 기준).
