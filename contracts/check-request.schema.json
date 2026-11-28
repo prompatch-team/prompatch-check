@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "점검 요청 (연결 ②) 0.3",
+  "title": "점검 요청 (연결 ②) 0.4",
   "description": "기준은 tools/paste-test.html이 내는 JSON. 모든 위치(start)는 draft_text의 글자 위치(코드 포인트, 이모지 1개 = 1글자)",
   "type": "object",
   "required": [
@@ -11,7 +11,7 @@
   ],
   "properties": {
     "version": {
-      "const": "0.3"
+      "const": "0.4"
     },
     "input_mode": {
       "enum": [
@@ -83,6 +83,13 @@
     },
     "hashtags": {
       "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tag_area": {
+      "type": "array",
+      "description": "없어도 돼요. 맨 아래 태그 칸의 태그(\"#...\", 보이는 순서). 서식에서 찾았을 때만 채워요. 글만 붙여 넣으면 엔진이 글에서 찾아요",
       "items": {
         "type": "string"
       }

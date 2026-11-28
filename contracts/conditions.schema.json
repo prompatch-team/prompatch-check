@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "조건 목록 (연결 ①) 0.3",
+  "title": "조건 목록 (연결 ①) 0.4",
   "type": "object",
   "required": [
     "version",
@@ -8,7 +8,7 @@
   ],
   "properties": {
     "version": {
-      "const": "0.3"
+      "const": "0.4"
     },
     "guide_id": {
       "type": "string"

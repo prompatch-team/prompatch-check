@@ -1,6 +1,6 @@
-# 연결 형식 (contracts) 0.3
+# 연결 형식 (contracts) 0.4
 
-영역 사이에 주고받는 JSON의 약속이에요. 0.3은 지금 실제로 돌아가는 점검이 주고받는 값을 전부 담은 판이에요. 전 판에서 바뀐 점은 `CHANGELOG.md`에 있어요.
+영역 사이에 주고받는 JSON의 약속이에요. 0.4는 0.3에 강남맛집 키워드 세는 범위(태그 칸)와 지도 위치 판단 보류를 더한 판이에요. 전 판에서 바뀐 점은 `CHANGELOG.md`에 있어요.
 
 | 연결 | 누가 → 누구 | 파일 | owner |
 | --- | --- | --- | --- |
@@ -8,7 +8,7 @@
 | ② 점검 요청 | FE → BE | `check-request.schema.json`, `check-request.example.json` | 리릭 |
 | ② 점검 결과 | BE → FE | `check-result.schema.json`, `check-result.example.json` | 리릭 |
 
-- 세 형식 모두 `version`은 `"0.3"`이어야 해요. 다른 값이면 형식 오류예요.
+- 세 형식 모두 `version`은 `"0.4"`이어야 해요. 다른 값이면 형식 오류예요.
 - `*.example.json`(번호 없는 것 셋)은 `samples/guide-sample.md` + `samples/draft-sample.md`에서 나온 한 묶음이에요. 숫자는 `criteria/sample-answer-key.md`와 같아요.
 - `conditions.example-2.json`: `samples/guide-sample-2.md`(리뷰플레이스 형식). 조건 종류가 거의 다 들어 있는 **형식 예시**예요. 정답지가 아니에요.
 - `conditions.example-3.json`: `samples/guide-04.md`. 링크 조건이 가이드 두 곳에서 나와서 `extra_quotes`가 들어 있어요.
@@ -39,7 +39,7 @@
 
 | 필드 | 뜻 |
 | --- | --- |
-| `version` | `"0.3"` |
+| `version` | `"0.4"` |
 | `guide_id` | 없어도 돼요. 가이드를 가리키는 이름 |
 | `platform` | 리뷰플레이스 형식이면 `"reviewplace"`, 아니면 `null`. 지금 코드는 이 두 값만 채워요. 레뷰·강남맛집·리뷰노트까지 알아본 값은 아래 "조건 뽑기 주소"의 `form`으로 가요 |
 | `campaign_type` | `"체험"`, `"기자단"`, 모르면 `null`. 기자단이면 원칙 점검 p6이 켜져요 |
@@ -62,7 +62,7 @@
 | `photo_count` | 사진 수 | `{"min": 15}`. 상한이 있으면 `"max": 30`, 동영상도 장수에 넣는 가이드면 `"include_video": true`. 특정 내용의 사진("책상 위 제품 사진 1장")은 `{"min": 1, "subject": "..."}`이고 `countable: false` | 코드 |
 | `video_count` | 동영상 수 | `{"min": 1}` | 코드 |
 | `link` | 링크 | `{"min": 1, "url": null}` | 코드 |
-| `map` | 지도 | `{"position": "bottom"}` (`null` = 위치 무관) | 코드 |
+| `map` | 지도 | `{"position": "bottom"}` (`null` = 위치 무관. `"strict": false`면 위치가 다를 때 빠짐 대신 판단 보류 "확인해 주세요", 강남맛집) | 코드 |
 | `hashtag` | 해시태그 | `{"tags": ["#바다숲녹차"], "pick": "each"}` (`pick`이 없으면 `each`) | 코드 |
 | `exact_phrase` | 정확한 표기 | `{"allowed": "바다숲 녹차", "forbidden": ["바다숲 녹차 스틱"], "scope": "title"}` | 코드 |
 | `banned_terms` | 금지어 | `{"terms": ["효능", "효과"], "category": null, "scope": "title_and_body"}` (`category`만 있으면 `countable: false`) | 코드 / 판단 보류 |
@@ -77,7 +77,7 @@
   - `both` = 가이드가 "전부"인지 "하나 이상"인지 말하지 않았을 때. 두 해석의 결과를 `note`에 같이 적고 "가이드 기준 확인 필요". 둘 다 지킴이면 지킴, 둘 다 빠짐이면 빠짐, 다르면 판단 보류.
 - 제목 키워드의 `pick`은 가이드 문장으로 정해요: "선택", "택1", "~ 중", "1개 이상" → `any` / `[필수]` 표시 → 필수 키워드만 `each` / 아무 말 없이 3개 이하 → `each` / 아무 말 없이 4개 이상 → `both`.
 - "키워드 중 1개를 선택하여 제목 및 #태그에 넣어주세요" 같은 가이드는 조건 두 개로 뽑아요: `title_keyword` 하나와 `hashtag`(`pick: any`) 하나. 둘 다 같은 `guide_quote`를 써요 (`conditions.example-2.json`의 c1, c2).
-- `scope`: `title`, `body`, `title_and_body`
+- `scope`: `title`, `body`, `title_and_body`. `keyword_count`만 `title_body_tags`도 써요: 제목 + 본문(본문 해시태그 포함) + 맨 아래 태그 칸을 합쳐, 정확히 같은 낱말만 세요(앞은 낱말 경계, 뒤에 조사 에서·으로·은·는·이·가·을·를·도·의·에·로·와·과 하나는 허용). 결과 `note`는 "제목 N + 본문 N + 태그 칸 N". 강남맛집 고정 칸에서 코드만 정해요(AI는 쓰지 않아요). 태그 칸에 접힌 태그("+11")가 있고 기준에 못 미치면 판단 보류예요
 - `params.free` (`keyword_count`): `true`면 블로거가 직접 고르는 자율 키워드예요. `keywords`는 비어 있어도 되고, 비어 있으면 판단 보류 "자율 키워드를 적어 주시면 함께 셀게요".
 - `params.needs_review`: `true`면 "기준 숫자를 코드가 인용 문구에서 확인하지 못했다"는 뜻이에요 (가이드에 "다섯 번"처럼 한글로 적혀 있음). 조건은 남기고, 화면에서 블로거가 숫자를 확인·수정하면 이 값을 지워요. 지우지 않은 채 점검하면 그 숫자로 판정하되 `note`에 확인이 필요하다고 적어요.
 - `params.unverified`: `true`면 AI가 낸 조건을 코드가 확인하지 못해 버렸고, 그 자리에 "조건 하나를 확인하지 못했어요. 가이드의 이 부분을 직접 봐 주세요" 안내로 남긴 조건이에요. `type`은 `judgment`라서 판단 보류로 세요. `guide_quote`는 코드가 가이드에서 찾은 줄이고, 못 찾았으면 빈 글자(`start` = `end` = 0)예요.
@@ -109,6 +109,7 @@
 | `photo_count`, `video_count`, `has_map` | 서식에서 셌거나 블로거가 입력한 값. 모르면 `null` → 해당 조건은 `hold`. 단, `photo_count`가 `null`이어도 `draft_text`에 "대표사진 삭제"·"대표사진 설정" 줄이 있으면 그 줄 수로 판정하고 `note`에 적어요 |
 | `links` | `[{ "url": "...", "start": 위치 또는 null }]` 본문 안 링크와 링크 카드. 본문에 글자가 없는 링크(카드 등)는 `start`가 `null`. 같은 주소가 여러 번 들어 있어도 되고, 셀 때 1개로 세요 |
 | `hashtags` | `["#..."]` 본문과 맨 아래 태그 칸에서 찾은 태그 |
+| `tag_area` | 없어도 돼요. `["#..."]` 맨 아래 태그 칸의 태그만 (보이는 순서). 서식에서 찾았을 때만 채워요. 글만 붙여 넣으면 엔진이 글 끝의 태그 칸 줄에서 찾아요. `keyword_count`의 `title_body_tags`에서 써요 |
 | `media` | `[{ "kind": "photo", "start": 위치 }]` 서식에서 찾은 미디어의 본문 안 위치 (그 자리 표시 줄의 시작) |
 | `captions` | 없어도 돼요. 사진 설명(캡션) 글의 `draft_text` 안 자리(`start`, `end`) 목록. 서식에서 `se-caption` 글 블록을 찾았을 때만 채워요. 키워드 찾기에는 늘 들어가요 |
 | `count_captions` | 없어도 돼요. 사진 설명을 글자 수에 넣을지(참/거짓). 화면의 "설정"에서 정해요. 없으면 서버 설정(`PROMPATCH_COUNT_CAPTIONS`, 기본 넣음)을 써요 |
