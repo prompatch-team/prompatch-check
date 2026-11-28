@@ -75,7 +75,7 @@ const isDocTitle  = w => w.includes('title') && w.includes('document');   // se-
 const isComponent = w => w.includes('component');                         // se-component
 // ─────────────────────────────────────────────────────────────────────────
 
-const VERSION = '0.3';
+const VERSION = '0.4';
 const KIND = { photo: '사진', video: '동영상', map: '지도·장소', oglink: '링크 카드', sticker: '스티커',
   banner: '캠페인 배너', profile: '프로필 사진', other: '본문 사진 블록 밖의 그림' };
 // 사진 수에서 빼는 그림 (10단계, 실제 붙여넣기에서 찾은 것). 주소는 읽기만 하고 불러오지 않아요.
@@ -306,6 +306,9 @@ function analyze(html) {
     videoCount: units.filter(u => u.kind === 'video').length,
     hasMap: units.some(u => u.kind === 'map'),
     hashtags: hashtagsIn(bodyOnly + '\n' + outside.join('\n')),
+    // 아래 태그 칸: 글 블록 밖의 해시태그 (강남맛집 키워드 횟수에 써요, 2026-11-28)
+    // ponytail: 글 블록 밖 해시태그를 모두 태그 칸으로 봐요. 태그 칸이 아닌 블록 밖 해시태그가 보이면 태그 칸 class로 좁히기
+    tagArea: hashtagsIn(outside.join('\n')),
     top: [...top], path,
     dump: structure(doc),
   };
@@ -338,14 +341,14 @@ function structure(doc) {
   ].join('\n');
 }
 
-// contracts/check-request (0.3) 모양. 이 JSON이 점검 요청 형식의 기준이에요.
+// contracts/check-request (0.4) 모양. 이 JSON이 점검 요청 형식의 기준이에요.
 // counts_source: 이 도구는 숫자를 고치는 칸이 없어서 html이면 항상 parsed(자동으로 센 값)예요.
 function toRequest(r) {
   return {
     version: VERSION, input_mode: 'html', counts_source: 'parsed', title: r.title, draft_text: r.draft,
     photo_count: r.photoCount, video_count: r.videoCount, has_map: r.hasMap,
     links: r.links.filter(l => l.where === 'body' || l.where === 'oglink').map(l => ({ url: l.url, start: l.start })),
-    hashtags: r.hashtags, media: r.media, captions: r.captions,
+    hashtags: r.hashtags, tag_area: r.tagArea, media: r.media, captions: r.captions,
     banner_count: r.bannerCount, banner_top: r.bannerTop,
   };
 }
@@ -353,7 +356,7 @@ function toTextRequest(plain) {
   return {
     version: VERSION, input_mode: 'text', counts_source: 'user', title: null, draft_text: plain,
     photo_count: null, video_count: null, has_map: null,
-    links: [], hashtags: hashtagsIn(plain), media: [], captions: [],
+    links: [], hashtags: hashtagsIn(plain), tag_area: [], media: [], captions: [],   // 글만이면 태그 칸은 엔진이 글에서 찾아요
     banner_count: null, banner_top: null,                // 글만 붙여 넣으면 그림을 못 봐요
   };
 }
@@ -425,7 +428,7 @@ function run(html, plainRaw, types, tests) {
     h('p', { id: 'selftest', class: tests.every(t => t[1]) ? 'ok' : 'bad', text: `${tests.filter(t => t[1]).length}/${tests.length} 통과` }),
     table(['항목', '결과'], tests.map(t => [t[0], t[1] ? '통과' : '실패']))));
 
-  const jsonBox = req => section('check-request (0.3) 모양',
+  const jsonBox = req => section('check-request (0.4) 모양',
     h('p', { class: 'warn', text: '이 JSON에는 원고 글이 그대로 들어 있어요. 대화에 붙이지 마세요.' }),
     h('div', { class: 'row' },
       (() => {
@@ -540,6 +543,9 @@ const SAMPLE_HTML = `<meta charset="utf-8"><div class="se-main-container">
 </div>`;
 const SAMPLE_PLAIN = '바다숲 녹차 스틱 써 본 이야기\n업체에서 제품을 받아 쓴 글이에요 🍵\n\n물에 잘 녹아요. 판매처 보기\n#바다숲녹차 #녹차스틱';
 
+const TAG_AREA_HTML = '<div class="se-main-container"><div class="se-component se-text"><p class="se-text-paragraph"><span>본문 글 #본문태그</span></p></div></div>'
+  + '<div class="post_tag"><span>#지어낸태그</span> <span>#둘째태그</span></div>';
+
 function selfTest() {
   const r = analyze(SAMPLE_HTML), q = toRequest(r), d = Array.from(q.draft_text), t = toTextRequest(SAMPLE_PLAIN);
   return [
@@ -552,6 +558,8 @@ function selfTest() {
     ['미디어 5개의 위치가 모두 "[" 를 가리킴 (이모지 뒤에서도)', q.media.length === 5 && q.media.every(m => d[m.start] === '[')],
     ['빈 줄이 남아 있음', q.draft_text.includes('🍵\n\n물에')],
     ['해시태그 2개', q.hashtags.join() === '#바다숲녹차,#녹차스틱'],
+    ['본문 해시태그는 태그 칸이 아님, 글 블록 밖 해시태그만 태그 칸', q.tag_area.length === 0 && t.tag_area.length === 0
+      && toRequest(analyze(TAG_AREA_HTML)).tag_area.join() === '#지어낸태그,#둘째태그'],
     ['지도·카드·동영상 안의 글은 본문에서 뺌', !/지어낸 장소|가게 이름|동영상 제목/.test(q.draft_text) && r.excluded.length === 3],
     ['"구조만"에 글과 주소가 없음', !/녹차|이야기|example|http|shop|jpg/.test(r.dump) && r.dump.includes('div.se-component.se-imageStrip')],
     ['서식이 없으면 text 모드, 숫자는 null', t.input_mode === 'text' && t.photo_count === null && t.has_map === null && t.hashtags.length === 2],
