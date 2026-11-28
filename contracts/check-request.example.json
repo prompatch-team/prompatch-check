@@ -1,5 +1,5 @@
 {
-  "version": "0.3",
+  "version": "0.4",
   "input_mode": "text",
   "counts_source": "user",
   "title": null,
@@ -9,6 +9,7 @@
   "has_map": false,
   "links": [],
   "hashtags": [],
+  "tag_area": [],
   "media": [
     {
       "kind": "photo",

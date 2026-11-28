@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "점검 결과 (연결 ②) 0.3",
+  "title": "점검 결과 (연결 ②) 0.4",
   "description": "draft_spans의 위치는 요청의 draft_text(field가 title이면 제목) 글자 위치(코드 포인트). end는 포함하지 않음",
   "type": "object",
   "required": [
@@ -11,7 +11,7 @@
   ],
   "properties": {
     "version": {
-      "const": "0.3"
+      "const": "0.4"
     },
     "summary": {
       "type": "object",

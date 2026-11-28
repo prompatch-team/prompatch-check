@@ -1,4 +1,4 @@
-// 원고를 읽어 오는 부분. 붙여 넣은 서식(HTML)과 글을 점검 요청(contracts/check-request 0.3)으로 바꿔요.
+// 원고를 읽어 오는 부분. 붙여 넣은 서식(HTML)과 글을 점검 요청(contracts/check-request 0.4)으로 바꿔요.
 //
 // - 화면(DOM)과 서버를 몰라요. 받은 글자만 다뤄요. 그래서 나중에 크롬 확장으로 옮길 때 이 파일과 analyze.js만
 //   가져가면 돼요 (확장의 콘텐츠 스크립트가 에디터 본문을 읽어 Reader.fromPaste에 넘기면 돼요).

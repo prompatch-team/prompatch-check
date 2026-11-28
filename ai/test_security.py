@@ -95,7 +95,7 @@ class HijackedAnswerIsContained(unittest.TestCase):
         self.assertLessEqual(len(checked(doc)), ex.MAX_CONDITIONS)
         self.assertLessEqual(len(notices(doc)), ex.MAX_NOTICES)          # 안내도 개수에 상한이 있어요
         self.assertLessEqual(len(dropped), ex.MAX_DROPPED)
-        self.assertEqual((doc["version"], doc["platform"], doc["campaign_type"]), ("0.3", None, "체험"))
+        self.assertEqual((doc["version"], doc["platform"], doc["campaign_type"]), ("0.4", None, "체험"))
         self.assertEqual(sorted(doc), ["campaign_type", "conditions", "platform", "version"])
         for c in doc["conditions"]:
             self.assertEqual(sorted(c), ["countable", "guide_quote", "id", "label", "params", "type"])

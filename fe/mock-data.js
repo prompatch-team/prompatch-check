@@ -9,7 +9,7 @@ const MOCK = {
    "name": "예시 1: 카페 방문 가이드",
    "guide": "# 예시 가이드: 모래알 카페 체험단\n\n> 지어낸 예시예요. 실제 광고주·블로거와 관계없어요. 실제 가이드와 원고는 이 저장소에 올리지 않아요.\n\n모래알 카페 체험단에 선정되신 것을 축하드립니다. 아래 내용을 지켜 원고를 작성해 주세요.\n\n1. 필수 키워드 \"전포동 카페\"를 본문에 5회 이상 넣어 주세요.\n2. 본문은 공백 제외 450자 이상으로 작성해 주세요.\n3. 사진은 10장 이상 올려 주세요. 매장 외관 사진 1장을 꼭 포함해 주세요.\n4. 글 첫 부분에 \"업체로부터 음료를 제공받아 작성한 글입니다\" 문구를 넣어 주세요.\n5. 글 하단에 매장 지도를 첨부해 주세요.\n6. 매장 분위기와 좌석에 대한 솔직한 느낌을 적어 주세요.\n7. 다른 카페와 비교하는 내용은 넣지 말아 주세요.\n\n원고는 방문 후 7일 안에 제출해 주세요.\n",
    "doc": {
-    "version": "0.3",
+    "version": "0.4",
     "guide_id": "sample-moraeal",
     "platform": null,
     "campaign_type": "체험",
@@ -138,7 +138,7 @@ const MOCK = {
    },
    "dropped": [],
    "request": {
-    "version": "0.3",
+    "version": "0.4",
     "input_mode": "text",
     "counts_source": "user",
     "title": null,
@@ -148,6 +148,7 @@ const MOCK = {
     "has_map": false,
     "links": [],
     "hashtags": [],
+    "tag_area": [],
     "media": [
      {
       "kind": "photo",
@@ -188,14 +189,14 @@ const MOCK = {
    "form": null,
    "rules": {
     "doc": {
-     "version": "0.3",
+     "version": "0.4",
      "platform": null,
      "campaign_type": null,
      "conditions": []
     },
     "dropped": [],
     "result": {
-     "version": "0.3",
+     "version": "0.4",
      "summary": {
       "kept": 0,
       "missing": 0,
@@ -253,7 +254,7 @@ const MOCK = {
     }
    },
    "result": {
-    "version": "0.3",
+    "version": "0.4",
     "summary": {
      "kept": 1,
      "missing": 4,
@@ -433,7 +434,7 @@ const MOCK = {
    "name": "예시 2: 리뷰플레이스 형식 가이드",
    "guide": "# 예시 가이드 2: 바다숲 녹차 스틱 (리뷰플레이스 형식)\n\n> 지어낸 예시예요. 실제 광고주·제품·블로거와 관계없어요. 리뷰플레이스 캠페인 페이지의 칸 구성만 본떴어요.\n\n[블로그] 바다숲 녹차 스틱을 소개해주세요\n\n제목키워드\n녹차스틱 , 바다숲녹차 , 간편녹차\n# 키워드 중 1개를 선택하여 제목 및 #태그에 넣어주세요.\n\n본문키워드\n녹차스틱 , 바다숲녹차 , 간편녹차 , 사무실차\n# 키워드 중 1개를 선택하여 본문에 4번 이상 넣어주세요.\n\n캠페인 안내\n공정위 대가성 문구는 반드시 리뷰 상단에 기재해주세요.\n1. 포스팅 제목에 제품명을 언급할 경우, 반드시 '바다숲 녹차'로 작성해주세요. ('바다숲 녹차 스틱' x)\n2. '효능', '효과' 단어는 사용하지 말아주세요.\n3. 원료 특징을 적는 문장 아래에는 \"*제품이 아닌 원료에 관한 내용입니다\" 문구를 넣어주세요.\n4. 필수 해시태그 #바다숲녹차 를 넣어주세요.\n5. 사무실 책상 위에서 찍은 제품 사진을 1장 이상 넣어주세요.\n\n리뷰어 미션\n키워드\n링크 삽입\n1,000자 이상\n15장 이상\n동영상 첨부\n미션이 지켜지지 않을 경우 제공된 서비스 및 포인트의 환수 혹은 미지급 처리가 될 수 있습니다\n\n리뷰 등록기간 12.02 ~ 12.09\n",
    "doc": {
-    "version": "0.3",
+    "version": "0.4",
     "guide_id": "sample-badasoop",
     "platform": "reviewplace",
     "campaign_type": null,
@@ -683,7 +684,7 @@ const MOCK = {
     }
    ],
    "request": {
-    "version": "0.3",
+    "version": "0.4",
     "input_mode": "html",
     "counts_source": "parsed",
     "title": "바다숲녹차 일주일 후기, 바다숲 녹차 맛은",
@@ -715,7 +716,7 @@ const MOCK = {
    "form": "reviewplace",
    "rules": {
     "doc": {
-     "version": "0.3",
+     "version": "0.4",
      "platform": "reviewplace",
      "campaign_type": null,
      "conditions": [
@@ -879,7 +880,7 @@ const MOCK = {
     },
     "dropped": [],
     "result": {
-     "version": "0.3",
+     "version": "0.4",
      "summary": {
       "kept": 7,
       "missing": 1,
@@ -1082,7 +1083,7 @@ const MOCK = {
     }
    },
    "result": {
-    "version": "0.3",
+    "version": "0.4",
     "summary": {
      "kept": 10,
      "missing": 1,
@@ -1355,7 +1356,7 @@ const MOCK = {
    "name": "예시 3: 화장품 배송 가이드",
    "guide": "# 예시 가이드 4: 이슬결 수분크림 (리뷰플레이스 형식, 배송형)\n\n> 지어낸 예시예요. 실제 광고주·제품·블로거와 관계없어요. 리뷰플레이스 캠페인 페이지의 칸 구성만 본떴어요.\n\n[블로그] 이슬결 수분크림을 소개해주세요\n\n제목키워드\n수분크림 추천 , 이슬결 크림 , 건성 수분크림\n# 키워드 중 1개를 선택하여 제목 및 #태그에 넣어주세요.\n\n본문키워드\n수분크림 추천 , 이슬결 크림 , 건성 수분크림 , 겨울 수분크림\n# 키워드 중 1개를 선택하여 본문에 4번 이상 넣어주세요.\n\n캠페인 안내\n공정위 대가성 문구는 반드시 리뷰 상단에 기재해주세요.\n1. 제품명을 언급할 경우, 반드시 '이슬결 수분크림'으로 작성해주세요. ('이슬결 보습크림' x)\n2. '치료', '완치', '효과' 단어는 사용하지 말아주세요.\n3. 성분을 소개하는 문장 아래에는 \"*개인에 따라 차이가 있을 수 있습니다\" 문구를 넣어주세요.\n4. 본문에 구매 링크를 넣어주세요. https://example.invalid/iseulgyeol\n5. 제품을 손등에 바른 사진을 1장 이상 넣어주세요.\n\n리뷰어 미션\n키워드\n링크 삽입\n800자 이상\n12장 이상\n미션이 지켜지지 않을 경우 제공된 제품 및 포인트의 환수 혹은 미지급 처리가 될 수 있습니다\n\n리뷰 등록기간 12.03 ~ 12.10\n",
    "doc": {
-    "version": "0.3",
+    "version": "0.4",
     "guide_id": "sample-iseulgyeol",
     "platform": "reviewplace",
     "campaign_type": "체험",
@@ -1573,7 +1574,7 @@ const MOCK = {
    },
    "dropped": [],
    "request": {
-    "version": "0.3",
+    "version": "0.4",
     "input_mode": "html",
     "counts_source": "parsed",
     "title": "이슬결 보습크림 두 주 사용 후기, 겨울철 건성 피부 관리",
@@ -1646,7 +1647,7 @@ const MOCK = {
    "form": "reviewplace",
    "rules": {
     "doc": {
-     "version": "0.3",
+     "version": "0.4",
      "platform": "reviewplace",
      "campaign_type": null,
      "conditions": [
@@ -1795,7 +1796,7 @@ const MOCK = {
     },
     "dropped": [],
     "result": {
-     "version": "0.3",
+     "version": "0.4",
      "summary": {
       "kept": 5,
       "missing": 2,
@@ -1961,7 +1962,7 @@ const MOCK = {
     }
    },
    "result": {
-    "version": "0.3",
+    "version": "0.4",
     "summary": {
      "kept": 5,
      "missing": 4,
@@ -2187,7 +2188,7 @@ const MOCK = {
    "name": "예시 4: 확인하지 못한 조건이 있는 가이드",
    "guide": "# 예시 가이드 5: 새벽곡물 선식 (리뷰플레이스 형식, 배송형)\n\n> 지어낸 예시예요. 실제 광고주·제품·블로거와 관계없어요. 리뷰플레이스 캠페인 페이지의 칸 구성만 본떴어요.\n\n[블로그] 새벽곡물 선식을 소개해주세요\n\n제목키워드\n아침 선식 , 새벽곡물 , 간편 아침식사\n# 키워드 중 1개를 선택하여 제목 및 #태그에 넣어주세요.\n\n본문키워드\n아침 선식 , 새벽곡물 , 간편 아침식사\n# 키워드 중 1개를 선택하여 본문에 3번 이상 넣어주세요.\n\n캠페인 안내\n공정위 대가성 문구는 반드시 리뷰 상단에 기재해주세요.\n1. 질병 이름은 직접 언급하지 말아주세요.\n2. '다이어트', '감량' 단어는 사용하지 말아주세요.\n3. 원료를 소개하는 문장 아래에는 \"*제품이 아닌 원료에 관한 설명입니다\" 문구를 넣어주세요.\n4. 필수 해시태그 #새벽곡물 #아침선식 을 모두 넣어주세요.\n5. 물이나 우유에 타는 모습을 사진으로 1장 이상 넣어주세요.\n\n리뷰어 미션\n키워드\n1,000자 이상\n15장 이상\n동영상 첨부\n미션이 지켜지지 않을 경우 제공된 제품 및 포인트의 환수 혹은 미지급 처리가 될 수 있습니다\n\n리뷰 등록기간 12.08 ~ 12.15\n",
    "doc": {
-    "version": "0.3",
+    "version": "0.4",
     "guide_id": "guide-05",
     "platform": "reviewplace",
     "campaign_type": "체험",
@@ -2442,7 +2443,7 @@ const MOCK = {
     }
    ],
    "request": {
-    "version": "0.3",
+    "version": "0.4",
     "input_mode": "html",
     "counts_source": "parsed",
     "title": "바쁜 아침에 챙겨 먹는 아침 선식, 새벽곡물 한 달 후기",
@@ -2525,7 +2526,7 @@ const MOCK = {
    "form": "reviewplace",
    "rules": {
     "doc": {
-     "version": "0.3",
+     "version": "0.4",
      "platform": "reviewplace",
      "campaign_type": null,
      "conditions": [
@@ -2672,7 +2673,7 @@ const MOCK = {
     },
     "dropped": [],
     "result": {
-     "version": "0.3",
+     "version": "0.4",
      "summary": {
       "kept": 6,
       "missing": 1,
@@ -2868,7 +2869,7 @@ const MOCK = {
     }
    },
    "result": {
-    "version": "0.3",
+    "version": "0.4",
     "summary": {
      "kept": 6,
      "missing": 4,

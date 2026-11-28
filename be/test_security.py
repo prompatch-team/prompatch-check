@@ -88,7 +88,7 @@ class InputLimits(ServerCase):
         request = load("contracts", "check-request.example.json")
 
         def check(conds):
-            return self.post("/api/check", {"conditions": {"version": "0.3", "conditions": conds}, "request": request}).status_code
+            return self.post("/api/check", {"conditions": {"version": "0.4", "conditions": conds}, "request": request}).status_code
         many = ["키워드%d" % i for i in range(server.MAX_ITEMS + 1)]
         self.assertEqual(check([cond("keyword_count", {"keywords": many, "min": 1})]), 413)
         self.assertEqual(check([cond("keyword_count", {"keywords": ["가" * (server.MAX_ITEM_CHARS + 1)], "min": 1})]), 413)
@@ -106,7 +106,7 @@ class InputLimits(ServerCase):
         conds = [cond("keyword_count", {"keywords": (words * 7)[:50], "min": 1, "pick": "each", "scope": "body"}, f"c{i}")
                  for i in range(8)]
         started = time.time()
-        payload = json.dumps({"conditions": {"version": "0.3", "conditions": conds}, "request": request}, ensure_ascii=False)
+        payload = json.dumps({"conditions": {"version": "0.4", "conditions": conds}, "request": request}, ensure_ascii=False)
         r = self.client.post("/api/check", content=payload.encode("utf-8"), headers=JSON)     # 브라우저처럼 UTF-8로 보내요
         took = time.time() - started
         self.assertEqual(r.status_code, 200)

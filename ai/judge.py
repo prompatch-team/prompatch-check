@@ -3,7 +3,7 @@
 - 보내는 것: 정성 조건의 물음과, 원고 전체 또는 관련 문단만(PROMPATCH_JUDGE_SCOPE=full|related, 기본 full).
 - 받은 판단은 그대로 믿지 않아요. 보낸 조건 id만 받고, 근거 문장(quote)은 원고에 실제로 있는지 코드로 확인해요.
   근거가 원고에 없으면 판단 보류로 바꿔요.
-- 결과는 점검 결과(check-result 0.3)의 results 항목 모양이에요. note는 "AI 판단(참고용)"으로 시작해요.
+- 결과는 점검 결과(check-result 0.4)의 results 항목 모양이에요. note는 "AI 판단(참고용)"으로 시작해요.
 - 이 파일은 원고 글을 화면, 로그, 파일에 남기지 않아요.
 """
 from __future__ import annotations

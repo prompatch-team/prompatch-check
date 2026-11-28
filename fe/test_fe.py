@@ -236,12 +236,12 @@ class Rules(unittest.TestCase):
     def test_fixed_disclosure_example_passes_our_own_checks(self):
         """복사 버튼의 대가성 문구 예시(고정 문구)를 글 첫 줄에 쓰면 p1은 지킴이고 p2(모호한 표현)에 걸리지 않아요."""
         phrase = re.search(r"const DISCLOSURE_EXAMPLE = '([^']+)';", read("app.js")).group(1)
-        request = {"version": "0.3", "input_mode": "text", "counts_source": "user", "title": "후기",
+        request = {"version": "0.4", "input_mode": "text", "counts_source": "user", "title": "후기",
                    "draft_text": phrase + "\n\n본문이에요.", "photo_count": None, "video_count": None, "has_map": None,
                    "links": [], "hashtags": [], "media": []}
         top = {"id": "c1", "type": "disclosure", "label": "대가성", "countable": True,
                "params": {"phrase": None, "position": "top"}, "guide_quote": {"text": "x", "start": 0, "end": 1}}
-        out = engine.check({"version": "0.3", "conditions": [top]}, request)
+        out = engine.check({"version": "0.4", "conditions": [top]}, request)
         status = {p["rule_id"]: p["status"] for p in out["principles"]}
         self.assertEqual((out["results"][0]["status"], status["p1"], status["p2"]), ("kept", "kept", "kept"))
 
@@ -395,7 +395,7 @@ class BannerFilter(unittest.TestCase):
         self.assertEqual((req["banner_count"], req["banner_top"]), (1, False))
 
     def test_top_banner_counts_as_disclosure_and_nothing_means_missing(self):
-        p1 = lambda req: next(p for p in engine.check({"version": "0.3", "conditions": []}, req)["principles"] if p["rule_id"] == "p1")
+        p1 = lambda req: next(p for p in engine.check({"version": "0.4", "conditions": []}, req)["principles"] if p["rule_id"] == "p1")
         with_banner = dict(self.read(photo(self.REVIEWNOTE) + text("교재를 한 달 써 봤어요.")), title="교재 후기")
         self.assertEqual(p1(with_banner)["status"], "kept")
         self.assertIn("대가성 표시 있음(맨 위 배너)", p1(with_banner)["note"])

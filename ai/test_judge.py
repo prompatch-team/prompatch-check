@@ -21,7 +21,7 @@ def cond(cid, kind="judgment", countable=False, **params):
             "guide_quote": {"text": "가이드 문장", "start": 0, "end": 6}}
 
 
-DOC = {"version": "0.3", "conditions": [
+DOC = {"version": "0.4", "conditions": [
     cond("q1", question="매장 분위기를 사진과 함께 소개했는가"),
     cond("q2", question="다른 브랜드와 비교하는 내용이 없는가"),
     cond("o1", kind="outside_draft", what="기간"),
@@ -65,7 +65,7 @@ class Judge(unittest.TestCase):
 
     def test_no_qualitative_conditions_means_no_call(self):
         llm = fake([])
-        out, info = judge.judge({"version": "0.3", "conditions": [DOC["conditions"][4]]}, DRAFT, llm=llm)
+        out, info = judge.judge({"version": "0.4", "conditions": [DOC["conditions"][4]]}, DRAFT, llm=llm)
         self.assertEqual((out, info["asked"], llm.calls), ([], 0, []))
 
     def test_request_caches_system_and_keeps_draft_as_data(self):
