@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<!-- 밖으로 나가는 요청을 브라우저가 전부 막아요: 사진, 글꼴, fetch, 프레임 모두 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>붙여 넣기 검증 (PromPatch 1단계)</title>
+<style>
+  :root { color-scheme: light dark; --line: #8884; --soft: #8881; --accent: #1a7f4b; --warn: #b45309; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.6 system-ui, "Malgun Gothic", sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h1 small { font-weight: 400; font-size: 14px; opacity: .6; margin-left: 6px; }
+  h2 { font-size: 16px; margin: 0 0 8px; }
+  h3 { font-size: 14px; margin: 0 0 4px; }
+  p { margin: 0 0 8px; }
+  .lead { opacity: .8; }
+  textarea#drop { width: 100%; padding: 14px; font: inherit; border: 2px dashed var(--line); border-radius: 10px; resize: none; background: var(--soft); }
+  textarea#drop:focus { outline: none; border-color: var(--accent); }
+  button { font: inherit; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.main { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 10px 0; }
+  #status { font-weight: 600; }
+  section { border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-top: 14px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .card b { display: block; font-size: 22px; line-height: 1.3; }
+  .card span { font-size: 13px; opacity: .7; }
+  .ask { border-left: 4px solid var(--accent); padding: 6px 10px; background: var(--soft); margin-top: 12px; }
+  .warn { border-left: 4px solid var(--warn); padding: 6px 10px; background: var(--soft); }
+  .note { font-size: 13px; opacity: .7; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  pre { margin: 0; padding: 10px; border-radius: 8px; background: var(--soft); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow: auto; font: 13px/1.55 ui-monospace, Consolas, monospace; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
+  th { font-size: 13px; opacity: .7; font-weight: 600; }
+  td.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ok { color: var(--accent); } .bad { color: #c62828; font-weight: 700; }
+  details { margin-top: 8px; } summary { cursor: pointer; }
+  footer { margin-top: 24px; font-size: 13px; opacity: .7; }
+</style>
+</head>
+<body>
+<main>
+  <h1>붙여 넣기 검증 <small>PromPatch 1단계</small></h1>
+  <p class="lead">네이버 블로그 에디터에서 글을 전체 선택(Ctrl+A)해 복사(Ctrl+C)한 뒤, 아래 칸을 누르고 붙여 넣으세요(Ctrl+V).</p>
+  <textarea id="drop" rows="2" placeholder="여기를 누르고 Ctrl+V" aria-label="붙여 넣기 칸"></textarea>
+  <div class="row">
+    <button id="sample" type="button">지어낸 예시로 시험</button>
+    <span id="status" role="status"></span>
+  </div>
+  <div id="out"></div>
+  <footer>붙여 넣은 내용은 이 화면 안에서만 분석해요. 밖으로 아무것도 보내지 않고, 사진·동영상은 불러오지 않고 개수와 위치만 세요.</footer>
+</main>
+
+<script>
+'use strict';
+
+// <<분석 코드 시작>> 여기부터 <<분석 코드 끝>>까지는 fe/analyze.js와 같아야 해요.
+// 고치면 python fe/make_analyze.py 로 fe 쪽을 다시 만들어요. python -m unittest fe.test_fe 가 다르면 알려 줘요.
+// ── 임시 힌트 ────────────────────────────────────────────────────────────
+// class 이름을 낱말로 쪼갠 뒤(se-placesMap → se, places, map) 아래 낱말이 있으면 그 종류로 봐요.
+// 실제 에디터 구조를 확인하기 전의 추측이에요. "구조만 복사" 결과를 보고 여기만 고쳐요.
+const HINT = {
+  video:   ['video', 'movie', 'vod'],
+  map:     ['map', 'places', 'place', 'location'],
+  oglink:  ['oglink', 'linkpreview'],
+  sticker: ['sticker', 'emoticon'],
+};
+const isDocTitle  = w => w.includes('title') && w.includes('document');   // se-documentTitle
+const isComponent = w => w.includes('component');                         // se-component
+// ─────────────────────────────────────────────────────────────────────────
+
+const VERSION = '0.3';
+const KIND = { photo: '사진', video: '동영상', map: '지도·장소', oglink: '링크 카드', sticker: '스티커',
+  banner: '캠페인 배너', profile: '프로필 사진', other: '본문 사진 블록 밖의 그림' };
+// 사진 수에서 빼는 그림 (10단계, 실제 붙여넣기에서 찾은 것). 주소는 읽기만 하고 불러오지 않아요.
+// 체험단 플랫폼이 본문 맨 위에 넣게 하는 배너 (주소, 경로 앞부분). 걸러서 사진 수에서 빼고 "배너"로 따로 세요.
+// 레뷰 revu.net. 강남맛집은 사이트 주소의 /_sp/ 그림, 리뷰노트는 reviewnote.cloud의 /gongjeong/ 그림 (2026-11-27 확인)
+const BANNERS = [
+  { host: 'revu.net' },
+  { host: 'xn--939au0g4vj8sq.net', path: '/_sp/' },
+  { host: 'reviewnote.cloud', path: '/gongjeong/' },
+];
+const pathOf = src => ((/^(?:https?:)?\/\/[^\/?#]+(\/[^?#]*)?/i.exec(src) || [])[1] || '/');
+const isBanner = src => {
+  const host = hostOf(src), path = pathOf(src).toLowerCase();
+  return BANNERS.some(b => (host === b.host || host.endsWith('.' + b.host)) && (!b.path || path.startsWith(b.path)));
+};
+// 배너가 "글 맨 위"인지: 첫 사진 블록이나 첫 3블록(se-component) 안. 맨 위 배너는 대가성 표시로 봐요 (우리 기준)
+const TOP_BLOCKS = 3;
+const PROFILE = /blogpfthumb|profile/i;               // 보기 화면의 블로거 프로필 사진
+const hostOf = src => ((/^(?:https?:)?\/\/([^\/?#:]+)/i.exec(src) || [])[1] || '').toLowerCase();
+const MARK = { photo: '[사진]', video: '[동영상]', map: '[지도]' };
+// button: 슬라이드의 "Previous image / Next image" 같은 단추 글자는 본문이 아니에요
+const SKIP = new Set(['script', 'style', 'noscript', 'template', 'head', 'meta', 'link', 'title', 'svg', 'button']);
+// 글자 수 기준 (2026-11-27): "네이버 블로그 본문 글 블록에 쓴 글자". 스마트에디터 글 블록(se-module-text)이 있는 서식이면
+// 글 블록 안의 글자만 본문(draft)에 넣어요. 보기 화면 머리·꼬리, 맨 아래 태그 칸, 링크 카드·동영상·지도 안 글은 빠져요.
+// 사진 설명(se-caption)은 글 블록이라 넣고, 자리를 captions로 따로 알려요 (빼는 것은 서버 설정 PROMPATCH_COUNT_CAPTIONS=0).
+// se-module-text, se-oglink는 실제 붙여넣기에서 확인했어요. se-caption은 2026-11-27 글쓰기 화면 복사 시험(samples/editor/)에서 확인했어요.
+const SE_TEXT = 'se-module-text', SE_CAPTION = 'se-caption';
+// 글쓰기 화면에서 복사하면 빈 칸의 안내 글자("사진 설명을 입력하세요." 등)가 se-placeholder로 따라와요. 글이 아니라서 읽지 않아요.
+// 글쓰기 화면의 링크는 a 태그가 아니라 span.se-link[data-href]이고, 링크 카드 안에는 주소 글자(se-oglink-url)만 있어요.
+// (셋 다 2026-11-27 글쓰기 화면 복사 시험 samples/editor/editor-test.html에서 확인)
+const SE_PLACEHOLDER = 'se-placeholder', SE_LINK = 'se-link', SE_OGLINK_URL = 'se-oglink-url';
+const EMBED = new Set(['video', 'iframe', 'embed', 'object']);
+const BLOCK = new Set(('address article aside blockquote dd details div dl dt fieldset figcaption figure footer form ' +
+  'h1 h2 h3 h4 h5 h6 header hr li main nav ol p pre section summary table td th tr ul').split(' '));
+
+// 글자 수와 위치는 파이썬과 같게 코드 포인트로 세요 (이모지 1개 = 1글자)
+const cp = s => Array.from(s).length;
+// 보이지 않는 글자(에디터가 빈 줄에 넣는 것)를 지우고 공백을 하나로 묶어요
+const zw = s => s.replace(/[​⁠﻿]/g, '');
+const clean = s => zw(s).replace(/\s+/g, ' ');
+const classWords = el => (el.getAttribute('class') || '')
+  .split(/[\s_-]+|(?<=[a-z0-9])(?=[A-Z])/).filter(Boolean).map(w => w.toLowerCase());
+const sel = el => [el.localName, ...(el.getAttribute('class') || '').split(/\s+/).filter(Boolean)].join('.');
+const hashtagsIn = s => [...new Set(s.match(/(?<![\p{L}\p{N}_&\/#])#[\p{L}\p{N}_]+/gu) || [])];
+// 공백 포함 = 문단 안의 글자와 띄어쓰기만 (2026-11-28 카티 결정). 줄바꿈·빈 줄·줄 앞뒤 공백은 세지 않아요
+const counts = s => ({ spaces: s.split('\n').reduce((n, l) => n + cp(l.trim()), 0), noSpaces: cp(s.replace(/\s/g, '')) });
+
+function specialKind(el) {
+  const w = classWords(el);
+  return Object.keys(HINT).find(k => w.some(x => HINT[k].includes(x))) || null;
+}
+function embedKind(el) {
+  const hint = (classWords(el).join(' ') + ' ' + (el.getAttribute('src') || '')).toLowerCase();
+  return hint.includes('map') ? 'map' : 'video';
+}
+
+// 붙여 넣은 HTML을 화면에 넣지 않고 DOMParser 문서 안에서만 읽어요. 이 문서는 사진을 불러오지 않아요.
+function analyze(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const body = doc.body;
+  const lines = [];                 // { text, media, links }
+  let cur = '', curLinks = [];
+  const open = [];                  // 지금 열려 있는 a 태그
+  const links = [], imgs = [], units = [], excluded = [], titles = [];
+  // 네이버 글의 본문 사진에는 se-image-resource가 붙어요. 이 class가 있는 글이면 이것만 사진으로 세요
+  // (프로필 사진, 링크 카드 썸네일 같은 그 밖의 그림은 빼요). 콜라주·슬라이드도 안의 사진마다 하나씩 세요.
+  const resourceOnly = !!body.querySelector('img.se-image-resource');
+  const seText = !!body.querySelector('.' + SE_TEXT);
+  let inText = 0, inCaption = 0;
+  const outside = [];               // 글 블록 밖 글자 (해시태그만 찾아요. 맨 아래 태그 칸의 태그도 해시태그 조건에는 써요)
+  const banners = [];               // 걸러 낸 배너 그림 (맨 위인지 보려고 요소를 기억해요)
+  const imgKind = el => {
+    const src = el.getAttribute('src') || '';
+    if (isBanner(src)) return 'banner';
+    if (PROFILE.test(src) || PROFILE.test(el.getAttribute('class') || '')) return 'profile';
+    if (resourceOnly && !classWords(el).includes('resource')) return 'other';
+    return 'photo';
+  };
+
+  const push = (text, media = null) => {
+    lines.push({ text, media, links: curLinks, caption: !media && inCaption > 0 }); cur = ''; curLinks = [];
+  };
+  const flush = () => { if (cur.trim()) push(cur.trimEnd()); else { cur = ''; } };
+  const addText = raw => {
+    if (seText && inText === 0) { outside.push(raw); return; }
+    let t = clean(raw);
+    if (cur === '' || cur.endsWith(' ')) t = t.trimStart();
+    if (!t) return;
+    if (t.trim()) for (const l of open) if (l.col === null) {
+      l.col = cur.length + (t.length - t.trimStart().length);
+      curLinks.push(l);
+    }
+    cur += t;
+  };
+  const compLabel = el => {
+    let top = el;
+    for (let p = el; p && p !== body; p = p.parentElement) {
+      if (isComponent(classWords(p))) return sel(p);
+      top = p;
+    }
+    return sel(top);
+  };
+
+  function walk(node, special, buf) {
+    for (const child of node.childNodes) {
+      if (child.nodeType === 3) { special ? buf.push(child.nodeValue) : addText(child.nodeValue); continue; }
+      if (child.nodeType !== 1) continue;
+      const name = child.localName;
+      if (SKIP.has(name)) continue;
+      const own = (child.getAttribute('class') || '').split(/\s+/);
+      if (own.includes(SE_PLACEHOLDER)) continue;
+      if (name === 'br') { if (!special) push(cur.trimEnd()); continue; }
+      if (name === 'img') {
+        const kind = special || imgKind(child);
+        imgs.push({ kind, comp: compLabel(child) });
+        if (kind === 'banner') banners.push(child);
+        if (kind === 'photo') { flush(); push(MARK.photo, 'photo'); }
+        continue;
+      }
+      let link = null;
+      const href = name === 'a' ? child.getAttribute('href') : own.includes(SE_LINK) ? child.getAttribute('data-href') : null;
+      if (href != null) {
+        const url = href.trim();
+        if (url && !/^(#|javascript:)/i.test(url)) {
+          link = { url, where: special || 'body', col: null, start: null };
+          links.push(link);
+        }
+      }
+      if (special) { walk(child, special, buf); continue; }
+
+      // 바깥쪽에서 처음 만난 동영상·지도·링크 카드·스티커 묶음을 하나로 세요
+      const kind = specialKind(child) || (EMBED.has(name) ? embedKind(child) : null);
+      if (kind) {
+        units.push({ kind, label: sel(child) });
+        if (MARK[kind]) { flush(); push(MARK[kind], kind); }
+        const inner = [], before = links.length;
+        walk(child, kind, inner);
+        // 글쓰기 화면의 링크 카드: a 태그가 없으면 카드 안 주소 글자로 링크 하나를 세요 (보기 화면 카드에는 a 태그가 있어요)
+        const urlEl = kind === 'oglink' && links.length === before ? child.querySelector('.' + SE_OGLINK_URL) : null;
+        const shown = urlEl ? clean(urlEl.textContent).trim() : '';
+        if (shown) links.push({ url: /^https?:\/\//i.test(shown) ? shown : 'https://' + shown, where: 'oglink', col: null, start: null });
+        const text = clean(inner.join(' ')).trim();
+        if (text) excluded.push({ kind, text });
+        continue;
+      }
+      if (isDocTitle(classWords(child))) {
+        const text = clean(child.textContent).trim();
+        if (text) titles.push({ text, how: 'class에 documentTitle (본문에서 뺌)', strong: true });
+        continue;
+      }
+      if (/^h[1-3]$/.test(name)) {
+        const text = clean(child.textContent).trim();
+        if (text) titles.push({ text, how: name + ' 태그', strong: false });
+      }
+
+      const block = BLOCK.has(name);
+      let mark = 0;
+      if (block) { flush(); mark = lines.length; }
+      const textBlock = own.includes(SE_TEXT), caption = own.includes(SE_CAPTION);
+      inText += textBlock; inCaption += caption;
+      if (link) open.push(link);
+      walk(child, null, null);
+      if (link) open.pop();
+      if (block) {
+        if (cur.trim()) push(cur.trimEnd());
+        else {
+          cur = '';
+          // 빈 문단(빈 줄)을 살려요: 빈 p, 또는 보이지 않는 글자만 든 요소.
+          // 글 블록이 있는 서식에서는 글 블록 안만 (사진 블록의 "AI 활용 설정" 같은 편집 화면 문단은 빈 줄이 아니에요).
+          // 비어 있는 사진 설명 칸도 빈 줄이 아니에요 (글쓰기 화면에서는 사진마다 빈 설명 칸이 따라와요)
+          if (lines.length === mark && (!seText || (inText > 0 && inCaption === 0)) && (name === 'p' || /[​ ]/.test(child.textContent))) push('');
+        }
+      }
+      inText -= textBlock; inCaption -= caption;
+    }
+  }
+  walk(body, null, null);
+  flush();
+
+  // 빈 줄 정리: 맨 앞·맨 뒤는 지우고, 이어진 빈 줄은 하나로
+  const kept = [];
+  for (const ln of lines) {
+    if (ln.text === '' && (kept.length === 0 || kept[kept.length - 1].text === '')) continue;
+    kept.push(ln);
+  }
+  while (kept.length && kept[kept.length - 1].text === '') kept.pop();
+
+  // 위치 계산 (코드 포인트)
+  const media = [], captions = [];
+  let off = 0;
+  for (const ln of kept) {
+    if (ln.media) media.push({ kind: ln.media, start: off });
+    if (ln.caption && ln.text) captions.push({ start: off, end: off + cp(ln.text) });
+    for (const l of ln.links) l.start = off + cp(ln.text.slice(0, l.col));
+    off += cp(ln.text) + 1;
+  }
+  const draft = kept.map(l => l.text).join('\n');
+  const bodyOnly = kept.filter(l => !l.media).map(l => l.text).join('\n');
+  const firstLine = kept.find(l => !l.media && l.text);
+  if (firstLine) titles.push({ text: firstLine.text, how: '본문 첫 줄 (참고)', strong: false });
+
+  // 최상위 요소: 감싸는 요소가 하나뿐이면 안으로 들어가요
+  let root = body;
+  const path = [];
+  const els = n => [...n.children].filter(c => !SKIP.has(c.localName));
+  const ownText = n => [...n.childNodes].some(c => c.nodeType === 3 && clean(c.nodeValue).trim());
+  while (els(root).length === 1 && !ownText(root) && els(els(root)[0]).length) { root = els(root)[0]; path.push(sel(root)); }
+  const top = new Map();
+  for (const c of els(root)) top.set(sel(c), (top.get(sel(c)) || 0) + 1);
+
+  // 맨 위 배너: 배너가 든 블록(가장 바깥 se-component)이 첫 3블록 안이거나 첫 사진 블록이면.
+  // 블록 구조가 없는 서식이면 글의 첫 그림 자리에 배너가 있을 때만.
+  const outer = el => { let c = null; for (let p = el; p && p !== body; p = p.parentElement) if (isComponent(classWords(p))) c = p; return c; };
+  const blocks = [...body.querySelectorAll('*')].filter(el => isComponent(classWords(el)) && outer(el) === el);
+  const firstPhoto = blocks.find(b => [...b.querySelectorAll('img')].some(i => imgKind(i) === 'photo' || imgKind(i) === 'banner'));
+  const bannerTop = banners.some(img => {
+    const block = outer(img);
+    if (!block) return body.querySelector('img') === img;
+    const at = blocks.indexOf(block);
+    return at >= 0 && (at < TOP_BLOCKS || block === firstPhoto);
+  });
+
+  return {
+    draft, bodyOnly, media, captions, links, imgs, units, excluded, titles, seText,
+    title: (titles.find(t => t.strong) || {}).text || null,
+    photoCount: imgs.filter(i => i.kind === 'photo').length,
+    bannerCount: banners.length, bannerTop,
+    videoCount: units.filter(u => u.kind === 'video').length,
+    hasMap: units.some(u => u.kind === 'map'),
+    hashtags: hashtagsIn(bodyOnly + '\n' + outside.join('\n')),
+    top: [...top], path,
+    dump: structure(doc),
+  };
+}
+
+// "구조만": 태그 이름과 class 이름만 남겨요. 글, 주소, 다른 속성은 넣지 않아요.
+function structure(doc) {
+  const ser = (el, depth) => {
+    const hasText = [...el.childNodes].some(n => n.nodeType === 3 && clean(n.nodeValue).trim());
+    const out = [];
+    let prev = null, n = 0;
+    const emit = () => {
+      if (prev === null) return;
+      const ls = prev.split('\n');
+      if (n > 1) ls[0] += '  ×' + n;
+      out.push(...ls);
+    };
+    for (const k of el.children) {
+      const s = ser(k, depth + 1);
+      if (s === prev) n++; else { emit(); prev = s; n = 1; }
+    }
+    emit();
+    return '  '.repeat(depth) + sel(el) + (hasText ? ' [글]' : '') + (out.length ? '\n' + out.join('\n') : '');
+  };
+  const count = t => doc.body.querySelectorAll(t).length;
+  return [
+    '# paste-test 구조만: 태그와 class 이름뿐이에요. [글] = 글자가 든 자리, ×N = 같은 모양이 N번 이어짐',
+    `# img ${count('img')} / video ${count('video')} / iframe ${count('iframe')} / a ${count('a')}`,
+    ...[...doc.body.children].length ? [ser(doc.body, 0)] : ['(요소 없음)'],
+  ].join('\n');
+}
+
+// contracts/check-request (0.3) 모양. 이 JSON이 점검 요청 형식의 기준이에요.
+// counts_source: 이 도구는 숫자를 고치는 칸이 없어서 html이면 항상 parsed(자동으로 센 값)예요.
+function toRequest(r) {
+  return {
+    version: VERSION, input_mode: 'html', counts_source: 'parsed', title: r.title, draft_text: r.draft,
+    photo_count: r.photoCount, video_count: r.videoCount, has_map: r.hasMap,
+    links: r.links.filter(l => l.where === 'body' || l.where === 'oglink').map(l => ({ url: l.url, start: l.start })),
+    hashtags: r.hashtags, media: r.media, captions: r.captions,
+    banner_count: r.bannerCount, banner_top: r.bannerTop,
+  };
+}
+function toTextRequest(plain) {
+  return {
+    version: VERSION, input_mode: 'text', counts_source: 'user', title: null, draft_text: plain,
+    photo_count: null, video_count: null, has_map: null,
+    links: [], hashtags: hashtagsIn(plain), media: [], captions: [],
+    banner_count: null, banner_top: null,                // 글만 붙여 넣으면 그림을 못 봐요
+  };
+}
+// <<분석 코드 끝>>
+
+// ── 화면 ─────────────────────────────────────────────────────────────────
+// 붙여 넣은 내용은 textContent(글자)로만 화면에 써요. innerHTML을 쓰지 않아요.
+const $ = id => document.getElementById(id);
+const h = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) k === 'text' ? (e.textContent = v) : e.setAttribute(k, v);
+  e.append(...kids.flat().filter(k => k != null));
+  return e;
+};
+const section = (title, ...kids) => h('section', {}, h('h2', { text: title }), ...kids);
+const table = (heads, rows) => h('table', {},
+  h('thead', {}, h('tr', {}, heads.map(t => h('th', { text: t })))),
+  h('tbody', {}, rows.map(r => h('tr', {}, r.map(c => h('td', typeof c === 'number' ? { class: 'num', text: String(c) } : { text: String(c) }))))));
+const card = (big, label, sub) => h('div', { class: 'card' }, h('span', { text: label }), h('b', { text: big }), sub ? h('span', { text: sub }) : null);
+const countLine = s => { const c = counts(s); return `공백 제외 ${c.noSpaces}자 · 공백 포함 ${c.spaces}자`; };
+
+async function copyText(text, btn) {
+  let ok = true;
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = h('textarea'); ta.value = text;
+    document.body.append(ta); ta.select();
+    ok = document.execCommand('copy');
+    ta.remove();
+  }
+  const old = btn.textContent;
+  btn.textContent = ok ? '복사했어요' : '복사 못 했어요. 아래 미리 보기에서 직접 복사해 주세요';
+  setTimeout(() => { btn.textContent = old; }, 1800);
+}
+// 점검 요청 JSON을 파일로 내려받아요. 클립보드를 거치지 않아요. 파일은 직접 samples/private/ 아래로 옮겨요.
+const downloadName = (d = new Date()) => {
+  const two = n => String(n).padStart(2, '0');
+  return `draft-${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}.request.json`;
+};
+function downloadJson(req) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(req, null, 2) + '\n'], { type: 'application/json' }));
+  const a = h('a', { href: url, download: downloadName() });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const copyButton = (label, text, cls) => {
+  const b = h('button', { type: 'button', text: label, ...(cls ? { class: cls } : {}) });
+  b.addEventListener('click', () => copyText(text, b));
+  return b;
+};
+
+function run(html, plainRaw, types, tests) {
+  const out = $('out');
+  out.replaceChildren();
+  const plain = zw(plainRaw || '').replace(/\r\n?/g, '\n').trim();
+  let r = html && html.trim() ? analyze(html) : null;
+  const formatFound = !!r;
+  if (r && !r.draft) r = null;
+
+  if (!r && !plain) {
+    $('status').textContent = '클립보드에 글이 없어요. 에디터에서 다시 복사해 주세요.';
+    return;
+  }
+  $('status').textContent = '분석했어요. 클립보드에 들어 있던 종류: ' + (types.join(', ') || '없음');
+  if (tests) out.append(section('자체 시험 (지어낸 예시)',
+    h('p', { id: 'selftest', class: tests.every(t => t[1]) ? 'ok' : 'bad', text: `${tests.filter(t => t[1]).length}/${tests.length} 통과` }),
+    table(['항목', '결과'], tests.map(t => [t[0], t[1] ? '통과' : '실패']))));
+
+  const jsonBox = req => section('check-request (0.3) 모양',
+    h('p', { class: 'warn', text: '이 JSON에는 원고 글이 그대로 들어 있어요. 대화에 붙이지 마세요.' }),
+    h('div', { class: 'row' },
+      (() => {
+        const b = h('button', { type: 'button', id: 'download', text: '점검 요청 JSON 내려받기' });
+        b.addEventListener('click', () => downloadJson(req));
+        return b;
+      })(),
+      h('span', { class: 'note', text: '파일로 저장돼요 (draft-날짜-시간.request.json). 내려받은 파일은 samples/private/ 아래로 옮겨 주세요. 제목은 파일의 title에 직접 적어요.' })),
+    h('pre', { id: 'json', text: JSON.stringify(req, null, 2) }));
+
+  if (!r) {
+    out.append(
+      section('서식을 못 읽었어요',
+        h('p', { class: 'warn', text: formatFound
+          ? '클립보드에 서식(text/html)은 있었지만 글도 사진도 찾지 못했어요. 이 경우에는 숫자 입력칸 방식이 필요해요.'
+          : '클립보드에 서식(text/html)이 없어요. 글만 들어왔어요. 이 경우에는 숫자 입력칸 방식이 필요해요.' }),
+        h('h3', { text: 'text/plain (클립보드 그대로)' }),
+        h('p', { class: 'note', text: countLine(plain) }),
+        h('pre', { text: plain })),
+      jsonBox(toTextRequest(plain)));
+    return;
+  }
+
+  const req = toRequest(r);
+  const bodyCount = counts(r.bodyOnly);
+  const byComp = new Map();
+  for (const i of r.imgs) { const k = i.kind + '\n' + i.comp; byComp.set(k, (byComp.get(k) || 0) + 1); }
+  const WHERE = { body: '본문', oglink: '링크 카드 안', map: '지도 안', video: '동영상 안', sticker: '스티커 안' };
+
+  out.append(
+    section('한눈에',
+      h('div', { class: 'cards' },
+        card(r.photoCount + '장', '사진', `img 태그 전체 ${r.imgs.length}개`),
+        card(r.videoCount + '개', '동영상'),
+        card(r.hasMap ? '있음' : '없음', '지도·장소'),
+        card(req.links.length + '개', '링크'),
+        card(r.hashtags.length + '개', '해시태그'),
+        card(bodyCount.noSpaces + '자', '본문 (공백 제외)', `공백 포함 ${bodyCount.spaces}자`)),
+      h('p', { class: 'ask', text: '확인할 것: 사진 수가 실제 글과 같나요? 다르면 아래 "사진 세부"에서 무엇이 더 세어졌는지 보세요.' }),
+      h('div', { class: 'row' },
+        copyButton('구조만 복사', r.dump, 'main'),
+        h('span', { class: 'note', text: '태그와 class 이름만 복사해요. 글 내용과 사진·링크 주소는 들어가지 않아요. Claude 대화에 붙여 주면 돼요.' })),
+      h('details', {}, h('summary', { text: '복사될 내용 미리 보기' }), h('pre', { id: 'dump', text: r.dump }))),
+
+    section('사진 세부 (img 태그가 어디에 들어 있나)',
+      r.imgs.length
+        ? table(['감싼 요소', 'img 수', '이렇게 봤어요'], [...byComp].map(([k, n]) => {
+            const [kind, comp] = k.split('\n');
+            const why = { banner: '캠페인 배너라 사진에서 뺌', profile: '프로필 사진이라 뺌', other: '본문 사진 블록 밖이라 뺌' }[kind];
+            return [comp, n, kind === 'photo' ? '사진으로 셈' : why || `${KIND[kind]} 안이라 사진에서 뺌`];
+          }))
+        : h('p', { text: 'img 태그가 하나도 없어요. 복사할 때 사진이 서식에 안 들어온 거예요.' }),
+      h('p', { class: 'note', text: '분류 기준은 아직 추측이에요. 실제 구조를 보고 맞춰요.' })),
+
+    section('제목 후보',
+      r.titles.length ? table(['글', '어떻게 찾았나'], r.titles.map(t => [t.text, t.how])) : h('p', { text: '찾지 못했어요.' }),
+      h('p', { class: 'note', text: r.title ? 'JSON의 title에는 첫 번째 줄을 넣었어요.' : '확실한 제목 요소가 없어서 JSON의 title은 null이에요. 본문만 복사하면 제목이 안 들어올 수 있어요.' })),
+
+    section('본문 비교',
+      h('div', { class: 'two' },
+        h('div', {}, h('h3', { text: 'text/html에서 뽑은 본문' }),
+          h('p', { class: 'note', text: countLine(r.bodyOnly) + ' ([사진] 같은 자리 표시는 빼고 셈)' }),
+          h('pre', { text: r.draft })),
+        h('div', {}, h('h3', { text: 'text/plain (클립보드 그대로)' }),
+          h('p', { class: 'note', text: plain ? countLine(plain) : 'text/plain이 없어요.' }),
+          h('pre', { text: plain }))),
+      h('p', { class: 'note', text: '글자 수는 이모지 1개를 1글자로 세요. "공백 포함"은 줄바꿈도 1글자로 세요.' })),
+
+    section('링크',
+      r.links.length
+        ? table(['주소', '어디', '본문 안 위치'], r.links.map(l => [l.url, WHERE[l.where], l.start === null ? '없음' : l.start]))
+        : h('p', { text: '링크(a 태그)가 없어요.' }),
+      h('p', { class: 'note', text: '지도·동영상·스티커 안의 링크는 JSON에 넣지 않았어요.' })),
+
+    section('사진이 아닌 것으로 본 요소 (동영상·지도·링크 카드·스티커)',
+      r.units.length ? table(['종류', '요소'], r.units.map(u => [KIND[u.kind], u.label])) : h('p', { text: '없어요.' })),
+
+    section('해시태그', h('p', { text: r.hashtags.length ? r.hashtags.join('  ') : '없어요.' })),
+
+    section('본문에서 뺀 글 (지도·링크 카드·동영상 안의 글)',
+      r.excluded.length ? table(['종류', '글'], r.excluded.map(x => [KIND[x.kind], x.text])) : h('p', { text: '없어요.' })),
+
+    section('최상위 요소의 class 이름',
+      r.path.length ? h('p', { class: 'note', text: '감싸는 요소 안으로 들어갔어요: ' + r.path.join(' > ') }) : null,
+      r.top.length ? table(['요소', '개수'], r.top) : h('p', { text: '요소가 없어요.' })),
+
+    jsonBox(req));
+}
+
+document.addEventListener('paste', e => {
+  e.preventDefault();               // 붙여 넣은 내용을 화면에 넣지 않아요
+  const cd = e.clipboardData;
+  run(cd.getData('text/html'), cd.getData('text/plain'), [...cd.types]);
+});
+$('drop').addEventListener('input', e => { e.target.value = ''; });
+
+// ── 자체 시험: 지어낸 예시로 세기와 위치가 맞는지 확인해요 ──────────────
+const S = 'https://example.invalid/';
+const SAMPLE_HTML = `<meta charset="utf-8"><div class="se-main-container">
+<div class="se-component se-documentTitle"><p class="se-text-paragraph"><span>바다숲 녹차 스틱 써 본 이야기</span></p></div>
+<div class="se-component se-text"><p class="se-text-paragraph"><span>업체에서 제품을 받아 쓴 글이에요 🍵</span></p>
+<p class="se-text-paragraph"><span>​</span></p>
+<p class="se-text-paragraph"><span>물에 잘 녹아요. </span><a href="${S}shop">판매처 보기</a></p></div>
+<script>window.__pasted_script_ran = 1<\/script>
+<div class="se-component se-image"><img src="${S}1.jpg" class="se-image-resource" onerror="window.__pasted_script_ran = 1" onload="window.__pasted_script_ran = 1"></div>
+<div class="se-component se-imageStrip"><img src="${S}2.jpg"><img src="${S}3.jpg"></div>
+<div class="se-component se-sticker"><img src="${S}s.png"></div>
+<div class="se-component se-video"><img src="${S}thumb.jpg" class="se-video-thumbnail"><span>동영상 제목</span></div>
+<div class="se-component se-oglink"><a href="${S}shop"><img src="${S}og.jpg"><strong>가게 이름</strong></a></div>
+<div class="se-component se-placesMap"><img src="${S}map.png"><strong>지어낸 장소</strong></div>
+<div class="se-component se-text"><p class="se-text-paragraph"><span>#바다숲녹차 #녹차스틱</span></p></div>
+</div>`;
+const SAMPLE_PLAIN = '바다숲 녹차 스틱 써 본 이야기\n업체에서 제품을 받아 쓴 글이에요 🍵\n\n물에 잘 녹아요. 판매처 보기\n#바다숲녹차 #녹차스틱';
+
+function selfTest() {
+  const r = analyze(SAMPLE_HTML), q = toRequest(r), d = Array.from(q.draft_text), t = toTextRequest(SAMPLE_PLAIN);
+  return [
+    ['제목을 찾고 본문에서 뺌', q.title === '바다숲 녹차 스틱 써 본 이야기' && !q.draft_text.includes('써 본 이야기')],
+    ['사진 3장 (img 7개 중 스티커·썸네일·지도 그림은 뺌)', q.photo_count === 3 && r.imgs.length === 7],
+    ['동영상 1개', q.video_count === 1],
+    ['지도 있음', q.has_map === true],
+    ['링크 2개 (본문 1, 링크 카드 1)', q.links.length === 2 && q.links[1].start === null],
+    ['링크 위치가 그 글자를 가리킴', d.slice(q.links[0].start, q.links[0].start + 6).join('') === '판매처 보기'],
+    ['미디어 5개의 위치가 모두 "[" 를 가리킴 (이모지 뒤에서도)', q.media.length === 5 && q.media.every(m => d[m.start] === '[')],
+    ['빈 줄이 남아 있음', q.draft_text.includes('🍵\n\n물에')],
+    ['해시태그 2개', q.hashtags.join() === '#바다숲녹차,#녹차스틱'],
+    ['지도·카드·동영상 안의 글은 본문에서 뺌', !/지어낸 장소|가게 이름|동영상 제목/.test(q.draft_text) && r.excluded.length === 3],
+    ['"구조만"에 글과 주소가 없음', !/녹차|이야기|example|http|shop|jpg/.test(r.dump) && r.dump.includes('div.se-component.se-imageStrip')],
+    ['서식이 없으면 text 모드, 숫자는 null', t.input_mode === 'text' && t.photo_count === null && t.has_map === null && t.hashtags.length === 2],
+    ['숫자 출처: 서식이면 parsed, 글만이면 user', q.counts_source === 'parsed' && t.counts_source === 'user'],
+    ['붙여 넣은 서식의 스크립트와 이벤트 속성이 실행되지 않음', window.__pasted_script_ran === undefined],
+    ['내려받는 파일 이름은 draft-날짜-시간.request.json', downloadName(new Date(2026, 10, 26, 9, 5)) === 'draft-20261126-0905.request.json'
+      && /^draft-\d{8}-\d{4}\.request\.json$/.test(downloadName())],
+    ['글자 수: 공백 제외 38자, 공백 포함 51자 (줄바꿈 포함, 자리 표시 제외)', counts(r.bodyOnly).noSpaces === 38 && counts(r.bodyOnly).spaces === 51],
+  ];
+}
+const runSample = () => run(SAMPLE_HTML, SAMPLE_PLAIN, ['text/plain', 'text/html (지어낸 예시)'], selfTest());
+$('sample').addEventListener('click', runSample);
+if (location.hash === '#selftest') runSample();
+</script>
+</body>
+</html>
