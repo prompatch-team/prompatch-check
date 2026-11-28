@@ -10,7 +10,7 @@
 
 1. 서버 없이: 크롬에서 `fe/index.html`을 열면 예시 모드예요 (지어낸 예시 4개로 화면 전체가 돌아요)
 2. 서버와 함께: `python -m uvicorn be.server:app --port 8000` → `http://127.0.0.1:8000` (키 없이 돌리려면 `.env`에 `PROMPATCH_AI_MODE=recorded`)
-3. 시험: `python -m unittest fe.test_fe` (크롬이 있으면 화면 자체 시험까지, 주소 끝에 `#selftest`를 붙여 열면 눈으로도 볼 수 있어요)
+3. 시험: 저장소 맨 위에서 `python -m unittest` (모든 영역 테스트를 한 번에 돌려요. 크롬이 있으면 화면 자체 시험까지, 주소 끝에 `#selftest`를 붙여 열면 눈으로도 볼 수 있어요)
 
 ## 화면 흐름
 
