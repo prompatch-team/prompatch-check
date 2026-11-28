@@ -62,6 +62,15 @@ class LeakCheck(unittest.TestCase):
     def test_phrases_shared_by_two_posts_are_screen_words(self):
         self.assertEqual(self.kinds("이웃추가 화면 아래쪽 공감 버튼 글자"), set())
 
+    def test_a_copy_of_the_same_file_elsewhere_does_not_make_its_phrases_common(self):
+        """원문을 다른 폴더에 그대로 복사해 둬도(나눠 줄 묶음 등) 그 글의 구절은 계속 막아요."""
+        base = Path(self.tmp.name)
+        (base / "copy").mkdir()
+        (base / "copy" / "K1.txt").write_text((base / "guides" / "K1.txt").read_text(encoding="utf-8"), encoding="utf-8")
+        with mock.patch.object(L, "made_up_shingles", return_value=set()):
+            pieces, words = L.collect(base)
+        self.assertEqual({h.split(":")[0] for h in L.scan("방문 후 사진을 열다섯 장", pieces, words, set())}, {"구절"})
+
     def test_names_addresses_and_ids_are_blocked_even_when_short(self):
         self.assertIn("가나다", self.words)                                        # 프로필 다음 줄의 작성자 이름
         self.assertEqual(self.kinds("작성자 가나다"), {"낱말"})
